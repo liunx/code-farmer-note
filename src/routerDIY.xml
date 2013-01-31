@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY chap1 SYSTEM "chap1.xml">
+<!ENTITY chap2 SYSTEM "chap2.xml">
+<!ENTITY chap3 SYSTEM "chap3.xml">
+<!ENTITY appa SYSTEM "appa.xml">
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
+  xmlns:xlink='http://www.w3.org/1999/xlink'>
+  <info>
+    <title>自己动手打造一台路由器</title>
+    <author>
+      <personname>
+        <firstname>刘</firstname>
+        <surname>磊</surname>
+      </personname>
+    </author>
+    <copyright>
+      <year>2013</year>
+      <holder>刘磊</holder>
+    </copyright>
+  </info>
+  <preface><title>前言</title>
+    <para>
+      这是前言，就是说明写作的目的等。
+    </para>
+  </preface>
+  &chap1;
+  &chap2;
+  &chap3;
+  &appa;
+  <index>参考索引</index>
+</book>

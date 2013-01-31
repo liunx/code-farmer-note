@@ -1,0 +1,238 @@
+<chapter xml:id="chapter1" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
+  xmlns:xlink='http://www.w3.org/1999/xlink'>
+  <title>第一章：搭建运行环境</title>
+  <para>
+    我们搭建的路由器是基于<emphasis>虚拟机</emphasis>的，所以这里我要介绍一下我们的运行环境，
+    运行环境我们选用<emphasis>xubuntu12.10</emphasis>，<emphasis>xubuntu12.10</emphasis>选用
+    <emphasis>xfce</emphasis>作为用户界面，特点是运行流畅，内存占用少，简洁高效，是您居家使用
+    利器！虚拟机我们选用<emphasis>qemu</emphasis>，<emphasis>qemu</emphasis>性能稳定，运行效
+    率很高，配合<emphasis>linux</emphasis>下<emphasis>kvm</emphasis>技术，运行效率非常高，而
+    且支持终端下显示，这样不仅节约内存使用，而且方便我们使用tmux终端分屏工具进行管理，非常放
+    便，最后，guest系统是谁呢？有人说，可以用任何一个linux版本啊，但是我觉得也不方便，首先linux
+    发行版相对尺寸较大，内存占用多，硬盘也要占用很大的空间，启动也比较慢，并且如果我们想要修改
+    其中的源码的话，也不是很方便，而且里面好多的东西也和我们的实验没有太多帮助，也不能对其进行
+    高度的定制，所以不是一个好选择，那么有没有像嵌入式系统那样体积小，高度可定制，速度快，使用
+    方便的，答案就是<emphasis>buildroot</emphasis>和<emphasis>openwrt</emphasis>的x86版本。gui
+    管理前端我们选用<emphasis>virtualbricks</emphasis>，其可以创建网络系统拓扑图，管理配置虚拟
+    系统等。
+  </para>
+  <section>
+    <title>安装xubuntu12.10</title>
+    <para>
+      安装系统很简单，这里就不多说了，可以选择安装到虚拟机里，但是性能不是很好，建议直接安装到
+      硬盘里，这样可以充分发挥电脑的性能。
+    </para>
+    <imageobject>
+      <imagedata align="right" width="6in" format="PNG"
+        fileref="../images/desktop.png"/>
+    </imageobject>
+  </section>
+  <section>
+    <title>编译vde</title>
+    <para>
+      ubuntu软件包里似乎对vde不是特别重视，更新的不是很及时，所以我们自己动手编译vde，首先我们svn
+      vde的源代码：
+      <command>svn co https://vde.svn.sourceforge.net/svnroot/vde/trunk/vde-2 vde_svn</command>
+      接下来配置编译<emphasis>vde</emphasis>了：
+      <command>cd vde_svn; autoreconf -fi; ./configure --enable-experimental; make; sudo make install</command>
+      <emphasis>vde</emphasis>支持<emphasis>python</emphasis>接口，虽然我还不知道这个怎么用，但是
+      还是支持为好，这里我们就要下载python的开发文件了：
+      <command>sudo apt-get install python-all-dev</command>如果一切顺利的话，那么<emphasis>vde</emphasis>
+      相关文件就会安装到<filename id="directory">/usr/local/</filename>这样的好处是不会和系统原装
+      的文件产生冲突，也方便管理了。
+    </para>
+  </section>
+  <section>
+    <title>安装qemu</title>
+    <para>
+      ubuntu自带的qemu不支持<emphasis>vde</emphasis>选项，无法配合<emphasis>virtualbricks</emphasis>
+      运行，所以我们自己编译<emphasis>qemu</emphasis>。
+        <computeroutput>
+          <literallayout>
+liunx@ubuntu:~/Work/DocBook/Work/code-farmer-note$ /usr/bin/qemu-system-i386  --help |grep vde
+liunx@ubuntu:~/Work/DocBook/Work/code-farmer-note$
+liunx@ubuntu:~/Work/DocBook/Work/code-farmer-note$ /usr/local/bin/qemu-system-i386 --help | grep vde
+-net vde[,vlan=n][,name=str][,sock=socketpath][,port=n][,group=groupname][,mode=octalmode]
+                connect the vlan 'n' to port 'n' of a vde switch running
+-netdev [user|tap|bridge|vde|socket],id=str[,option][,option][,...]
+liunx@ubuntu:~/Work/DocBook/Work/code-farmer-note$
+          </literallayout>
+        </computeroutput>
+      从结果中可以看出ubuntu自带的qemu没有编译vde功能，这个困扰我好长时间，我一直奇怪为啥我按vde WiKi
+      上的tutorial怎么都看不到效果，原来是这个原因！真让人郁闷。自己动手编译也不错啊，qemu1.2版本都支持
+      <emphasis>or32</emphasis>了，太好了，不过在编译<emphasis>qemu</emphasis>前，一些开发库必须先整上，
+      <computeroutput>
+        <literallayout>
+liunx@ubuntu:~/Work/Emulator/src/qemu$ ./configure
+Install prefix    /usr/local
+BIOS directory    /usr/local/share/qemu
+binary directory  /usr/local/bin
+library directory /usr/local/lib
+libexec directory /usr/local/libexec
+include directory /usr/local/include
+config directory  /usr/local/etc
+local state directory   /usr/local/var
+Manual directory  /usr/local/share/man
+ELF interp prefix /usr/gnemul/qemu-%M
+Source path       /home/liunx/Work/Emulator/src/qemu
+C compiler        cc
+Host C compiler   cc
+Objective-C compiler cc
+CFLAGS            -O2 -D_FORTIFY_SOURCE=2 -g
+QEMU_CFLAGS       -Werror -fPIE -DPIE -m64 -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -Wstrict-prototypes -Wredundant-decls -Wall -Wundef -Wwrite-strings -Wmissing-prototypes -fno-strict-aliasing  -fstack-protector-all -Wendif-labels -Wmissing-include-dirs -Wempty-body -Wnested-externs -Wformat-security -Wformat-y2k -Winit-self -Wignored-qualifiers -Wold-style-declaration -Wold-style-definition -Wtype-limits -I/usr/include/p11-kit-1    -I/usr/include/libpng12   -I/usr/include/pixman-1
+LDFLAGS           -Wl,--warn-common -Wl,-z,relro -Wl,-z,now -pie -m64 -g
+make              make
+install           install
+python            python
+smbd              /usr/sbin/smbd
+host CPU          x86_64
+host big endian   no
+target list       i386-softmmu x86_64-softmmu alpha-softmmu arm-softmmu cris-softmmu lm32-softmmu m68k-softmmu microblaze-softmmu microblazeel-softmmu mips-softmmu mipsel-softmmu mips64-softmmu mips64el-softmmu or32-softmmu ppc-softmmu ppcemb-softmmu ppc64-softmmu sh4-softmmu sh4eb-softmmu sparc-softmmu sparc64-softmmu s390x-softmmu xtensa-softmmu xtensaeb-softmmu unicore32-softmmu i386-linux-user x86_64-linux-user alpha-linux-user arm-linux-user armeb-linux-user cris-linux-user m68k-linux-user microblaze-linux-user microblazeel-linux-user mips-linux-user mipsel-linux-user or32-linux-user ppc-linux-user ppc64-linux-user ppc64abi32-linux-user sh4-linux-user sh4eb-linux-user sparc-linux-user sparc64-linux-user sparc32plus-linux-user unicore32-linux-user s390x-linux-user
+tcg debug enabled no
+gprof enabled     no
+sparse enabled    no
+strip binaries    yes
+profiler          no
+static build      no
+-Werror enabled   yes
+pixman            system
+SDL support       yes
+curses support    yes
+curl support      no
+mingw32 support   no
+Audio drivers     oss
+Extra audio cards ac97 es1370 sb16 hda
+Block whitelist
+Mixer emulation   no
+VirtFS support    yes
+VNC support       yes
+VNC TLS support   yes
+VNC SASL support  no
+VNC JPEG support  yes
+VNC PNG support   yes
+xen support       no
+brlapi support    no
+bluez  support    no
+Documentation     yes
+NPTL support      yes
+GUEST_BASE        yes
+PIE               yes
+vde support       yes
+Linux AIO support no
+ATTR/XATTR support yes
+Install blobs     yes
+KVM support       yes
+TCG interpreter   no
+fdt support       no
+preadv support    yes
+fdatasync         yes
+madvise           yes
+posix_madvise     yes
+sigev_thread_id   yes
+uuid support      yes
+libcap-ng support yes
+vhost-net support yes
+Trace backend     nop
+Trace output file trace-&lt;pid&gt;
+spice support     no (/)
+rbd support       no
+xfsctl support    no
+nss used          no
+usb net redir     no
+OpenGL support    yes
+libiscsi support  yes
+build guest agent yes
+seccomp support   no
+coroutine backend ucontext
+GlusterFS support no
+virtio-blk-data-plane no
+liunx@ubuntu:~/Work/Emulator/src/qemu$
+liunx@ubuntu:~/Work/Emulator/src/qemu$
+        </literallayout>
+      </computeroutput>
+      这里我们要关注几个配置选项，<emphasis>kvm enable</emphasis>，<emphasis>SDL</emphasis>和<emphasis>vde</emphasis>，
+      这几个配置一定齐全，这样才行，如果不是<emphasis>yes</emphasis>，话，那就下载他们的开发库和头文件，vde的话如前文
+      所述，已经成功安装了，就不必多虑了。然后<command>make &amp;&amp; make install</command>，经过漫长的编译（如果不幸
+      你的电脑特别挫的话，其实也不必自责，我的6核大电脑也要忙活一段时间呢），然后自己编译的<emphasis>qemu</emphasis>
+      就诞生了！注意安装完成了别忘了看一下vde功能是否编译进去了，不然就又要返工了！
+    </para>
+  </section>
+  <section>
+    <title>安装Virtualbricks</title>
+    <para>
+      在开始前，我要扯一下蛋了，这个程序也是我无意间找到的，当时我是想用<emphasis>Qemulator</emphasis>来
+      管理虚拟机的，但是发现在ubuntu下运行不稳定了，总是卡住，没办法，我决定自己编译源码的，但是发现这个
+      项目没有了，取而代之的就是这个<emphasis>Virtualbricks</emphasis>项目了，他不仅可以管理虚拟机，而且
+      可以可以配置<emphasis>vde</emphasis>建立网络设备互联的拓扑图，并且是真是可用的，就是通过vde的虚拟
+      连线、路由、交换机等链接各个虚拟机网卡接口，这样就可以在单台主机上模拟一个完整的网络系统了，好处就是
+      我们可以很方便的做实验了，而不需要昂贵的硬件投入了，真是棒极了！
+    </para>
+    <para>
+      闲言少叙，我们开始吧。<ulink url="https://launchpad.net/virtualbrick/trunk">Virtualbricks</ulink>
+      的源码安置在<ulink url="https://launchpad.net">launchpad</ulink>上，我们可以通过<emphasis>bzr</emphasis>
+      来获取源码，终端里输入<command>bzr branch lp:virtualbrick</command>，如果ubuntu提示没有安装，那么
+      就按照提示安装即可。OK，下面开始编译了，<command>cd virtualbrck; sudo ./install.sh</command>，如果
+      一切顺利的话，我们的安装就到此结束了！
+    </para>
+  </section>
+  <section>
+    <title>Build Guest System</title>
+    <para>
+      好了，外围环境搞定了，接下来就是要选择客户端系统了，一台路由器不仅仅有硬件系统构成的，还需要软件系统
+      配合才能发挥作用，否则就是<emphasis>裸奔</emphasis>了。客户端系统的选用标准前面我已介绍过了，下面就
+      开始编译客户端系统了。
+    </para>
+    <para>
+      首先登场的是<emphasis>OpenWrt</emphasis>，这是一款很出名的开源路由器系统，当然是基于<emphasis>linux</emphasis>
+      的了，那么<emphasis>OpenWrt</emphasis>已经就是一个路由系统了，作为嵌入式系统，他的体积很小，启动速度
+      很快，加上其支持<emphasis>X86</emphasis>平台，很符合我们的要求。而且他包含了大量的开源软件，使得我们
+      不必满世界的移植程序了，Perfact！
+    </para>
+    <para>
+      获得<emphasis>OpenWrt</emphasis>系统的方式有以下几种：
+      <orderedlist>
+        <listitem>
+          从源码进行编译
+        </listitem>
+        <listitem>
+          获取编译好的二进制镜像系统
+        </listitem>
+      </orderedlist>
+      编译<emphasis>OpenWrt</emphasis>也不难，可是时间上实在是太长了，如果你的电脑不够Power的话，那么还是省省吧，
+      还好，<emphasis>OpenWrt</emphasis>为我们编译好了各种平台上镜像版本，同时还包括软件仓库，这样既节约了时间，
+      又方便新手入门，只是一举多得。
+    </para>
+    <para>
+      好，那么去哪下载官方的二进制镜像呢，看这里<ulink url="http://downloads.openwrt.org/"></ulink>。
+    <imageobject>
+      <imagedata align="left" width="10in" format="PNG"
+        fileref="../images/openwrt-download.png"/>
+    </imageobject>
+    这么多选择，该选哪一个呢？这里我们关注有一下几个版本入口：
+    <orderedlist>
+      <listitem>backfire</listitem>
+      <listitem>kamikaze</listitem>
+      <listitem>snapshots</listitem>
+    </orderedlist>
+    <emphasis>backfire</emphasis>和<emphasis>kamikaze</emphasis>属于连个稳定的分支，正常使用没有太大问题，这里
+    我们可以使用他们的<emphasis>x86</emphasis>版本，但是这里我们选择<emphasis>snapshots</emphasis>版本，虽然快照
+    版本相对来说不是很稳定，但是代码更新很快，内核版本，软件包也更新，其实快照版本就是用来给大家测试用的，以便
+    获取<emphasis>Bug</emphasis>的反馈，增强系统的稳定性，所以，本着参与的目的，我们选择<emphasis>snapshots</emphasis>
+    版本，如果有问题的话，我们还可以反馈一些内容了。
+
+    </para>
+  </section>
+  <para>
+    好了，我们的第一章就要结束了，可是说了这么多，还是不知道都干了点啥？那么就要有图有真相了：
+    <imageobject>
+      <imagedata align="right" width="6in" format="PNG"
+        fileref="../images/virtualbrick.png"/>
+    </imageobject>
+    <imageobject>
+      <imagedata align="right" width="6in" format="PNG"
+        fileref="../images/virtualbrick2.png"/>
+    </imageobject>
+    哈！效果还是蛮酷的是不是？
+  </para>
+
+</chapter>
