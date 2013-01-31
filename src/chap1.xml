@@ -218,21 +218,146 @@ liunx@ubuntu:~/Work/Emulator/src/qemu$
     我们可以使用他们的<emphasis>x86</emphasis>版本，但是这里我们选择<emphasis>snapshots</emphasis>版本，虽然快照
     版本相对来说不是很稳定，但是代码更新很快，内核版本，软件包也更新，其实快照版本就是用来给大家测试用的，以便
     获取<emphasis>Bug</emphasis>的反馈，增强系统的稳定性，所以，本着参与的目的，我们选择<emphasis>snapshots</emphasis>
-    版本，如果有问题的话，我们还可以反馈一些内容了。
+    版本，如果有问题的话，我们还可以反馈一些内容了。<emphasis>但是，需要注意的是，由于这是个快照版本，内核模块
+      重新编译的话，是使得安装内核模块时失败</emphasis>，还好整个系统不是很大，我们只要及时跟新镜像就是了，而且
+    也用不到所有的软件包的，所以够用了。
+    <para>
+      接下来，我们进入<emphasis>snapshots</emphasis>目录，下载镜像。
+    <imageobject>
+      <imagedata align="left" width="10in" format="PNG"
+        fileref="../images/openwrt-download2.png"/>
+    </imageobject>
+    这里，我们只关注三个镜像文件：
+    <orderedlist>
+      <listitem>
+        <ulink url="http://downloads.openwrt.org/snapshots/trunk/x86/openwrt-x86-generic-combined-ext4.img.gz">
+          openwrt-x86-generic-combined-ext4.img.gz</ulink></listitem>
+      <listitem><ulink url="http://downloads.openwrt.org/snapshots/trunk/x86/openwrt-x86-generic-rootfs-ext4.img.gz">
+      openwrt-x86-generic-rootfs-ext4.img.gz</ulink></listitem>
+  <listitem><ulink url="http://downloads.openwrt.org/snapshots/trunk/x86/openwrt-x86-generic-vmlinuz">
+    openwrt-x86-generic-vmlinuz</ulink>
+  </listitem>
+    </orderedlist>
+    <emphasis>openwrt-x86-generic-combined-ext4.img.gz</emphasis>包括了引导程序、内核和跟文件系统，优点是简单易用，
+    缺点是无法挂载，所以导入配置文件的时候有些麻烦了，但是也没关系的，如果我们安装了<emphasis>openWrt</emphasis>
+    自带的用户界面的话，可以导入/导出配置文件的，但是目前来说作用还不是很大，反而增加了复杂性，所以我们选择后面
+    两个镜像来配合使用，前者只包含了根文件系统，后者是内核。
+    </para>
+    <para>
+      好了，下面，见证奇迹的时刻到了，前面做了那么多艰苦卓绝的工作，该是出成果的时候了！
+      先看一下我们的文件布局：
+      <computeroutput>
+        <literallayout>
+liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ tree
+.
+├── boot.sh
+├── firewall
+├── images
+│   ├── openwrt-x86-generic-combined-ext4.img
+│   ├── openwrt-x86-generic-combined-ext4.img.old
+│   ├── openwrt-x86-generic-rootfs-ext4.img
+│   └── openwrt-x86-generic-vmlinuz
+├── network
+├── qemu-ifdown
+├── qemu-ifup
+└── rootfs
 
+2 directories, 9 files
+liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$
+        </literallayout>
+      </computeroutput>
+      再看我们的运行脚本：
+      <computeroutput>
+        <literallayout>
+liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ ls
+boot.sh  firewall  images  network  qemu-ifdown  qemu-ifup  rootfs
+liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ clear
+liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ ls
+boot.sh  firewall  images  network  qemu-ifdown  qemu-ifup  rootfs
+liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ cat qemu-ifdown
+#!/bin/bash -
+
+bridge=virbr0
+brctl delif $bridge $1 || true
+ifconfig $1 down
+liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ cat qemu-ifup
+#!/bin/bash -
+
+bridge=virbr0
+ifconfig $1 0.0.0.0 promisc up
+brctl addif $bridge $1
+liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ cat boot.sh
+#!/bin/bash -
+#===============================================================================
+#
+#          FILE: boot.sh
+#
+#         USAGE: ./boot.sh
+#
+#   DESCRIPTION:
+#
+#       OPTIONS: ---
+#  REQUIREMENTS: ---
+#          BUGS: ---
+#         NOTES: ---
+#        AUTHOR: YOUR NAME (),
+#  ORGANIZATION:
+#       CREATED: 2012年05月23日 17时47分46秒 CST
+#      REVISION:  ---
+#===============================================================================
+
+set -o nounset                              # Treat unset variables as an error
+
+/usr/local/bin/qemu-system-i386 \
+        -m 64M \
+        -kernel images/openwrt-x86-generic-vmlinuz \
+        -hda images/openwrt-x86-generic-rootfs-ext4.img \
+        -append "root=/dev/sda console=ttyS0" \
+        -enable-kvm \
+        -nographic \
+        -usb \
+        -net nic,vlan=3,model=ne2k_pci,macaddr="12:34:56:78:9a:00" \
+        -net tap,vlan=3,ifname=openwrt0,script=qemu-ifup,downscript=qemu-ifdown \
+        -net nic,vlan=1,model=pcnet,macaddr="12:34:56:78:9a:01" \
+        -net socket,vlan=1,listen=:8010 \
+        -net nic,vlan=2,model=pcnet,macaddr="12:34:56:78:9a:02" \
+        -net socket,vlan=2,listen=:8011
+
+liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$
+        </literallayout>
+      </computeroutput>
+      看好了，大家！这里我们需要五个文件：
+    <orderedlist>
+      <listitem>boot.sh</listitem>
+      <listitem>qemu-ifup</listitem>
+      <listitem>qemu-ifdown</listitem>
+      <listitem>images/openwrt-x86-generic-rootfs-ext4.img</listitem>
+      <listitem>images/openwrt-x86-generic-vmlinuz</listitem>
+    </orderedlist>
+    你都找到了吗？
+    </para>
+    最后，激动人心的时刻到了，运行！
+    <command>sudo ./boot.sh</command>
+    <imageobject>
+      <imagedata align="left" width="10in" format="PNG"
+        fileref="../images/openwrt-cli.png"/>
+    </imageobject>
     </para>
   </section>
-  <para>
-    好了，我们的第一章就要结束了，可是说了这么多，还是不知道都干了点啥？那么就要有图有真相了：
-    <imageobject>
-      <imagedata align="right" width="6in" format="PNG"
-        fileref="../images/virtualbrick.png"/>
-    </imageobject>
-    <imageobject>
-      <imagedata align="right" width="6in" format="PNG"
-        fileref="../images/virtualbrick2.png"/>
-    </imageobject>
-    哈！效果还是蛮酷的是不是？
-  </para>
+  <section>
+    <title>尾声</title>
+    <para>
+      好了，我们的第一章就要结束了，可是说了这么多，还是不知道都干了点啥？那么就要有图有真相了：
+      <imageobject>
+        <imagedata align="right" width="6in" format="PNG"
+          fileref="../images/virtualbrick.png"/>
+      </imageobject>
+      <imageobject>
+        <imagedata align="right" width="6in" format="PNG"
+          fileref="../images/virtualbrick2.png"/>
+      </imageobject>
+      哈！效果还是蛮酷的是不是？
+    </para>
+  </section>
 
 </chapter>
