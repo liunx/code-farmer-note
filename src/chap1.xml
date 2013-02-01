@@ -176,7 +176,10 @@ liunx@ubuntu:~/Work/Emulator/src/qemu$
     </para>
   </section>
   <section>
-    <title>Build Guest System</title>
+    <title>配置网络环境</title>
+  </section>
+  <section>
+    <title>搭建“客户端”系统</title>
     <para>
       好了，外围环境搞定了，接下来就是要选择客户端系统了，一台路由器不仅仅有硬件系统构成的，还需要软件系统
       配合才能发挥作用，否则就是<emphasis>裸奔</emphasis>了。客户端系统的选用标准前面我已介绍过了，下面就
