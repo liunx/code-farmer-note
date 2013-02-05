@@ -1,8 +1,136 @@
 <chapter xml:id="chapter2" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
   xmlns:xlink='http://www.w3.org/1999/xlink'>
-  <title>第二章：选材</title>
+  <title>第二章：搭建网络环境</title>
   <para>
-    上一章说到了搭建运行环境了，接下来，我们要开工了。俗话说：“巧妇难下无米之炊”，那么我们在制作路由器之前
-    要选好材，药材好，药才好。
+    网络环境之与网络设备就像是水和鱼，谁都离不开谁的，所以我们只是做好了设备，却没有一个可靠的
+    运行环境，那么无论设备再好，也无法发挥他应有的作用。
   </para>
+  <para>
+    搭建网络环境也有”内“、”外“之分，“内”指的是<emphasis>主机网络</emphasis>，是指我们的网络环境
+    运行在独立的PC主机上，无需外部设备的参与，优点是显而易见的，就是网络环境本身可以自治，不需要
+    购买其他网络设备，尤其当你处于一个动态IP或者无法上网的情况下，内网环境完全可以由你自己定制，
+    而不受外部的干预，缺点就是<emphasis>单通</emphasis>别的主机想要访问你的内部网络时，主机网络
+    就无能为力了。“外”指的是桥接网络，特点是<emphasis>双通</emphasis>，实现主机之间的互访，但是
+    需要外部的网络设备进行连接，由于受制于外部网络，比如IP分配策略等的限制，使得我们的可定制性
+    下降了。显然，没有任何一种办法是完美的，所以我们要“内外”并用，发挥出他们的功力来。
+  </para>
+  <section>
+    <title>搭建主机网络</title>
+    <para>
+      搭建主机网络的办法有很多，下面我们就介绍一种方法：
+      <screen>
+<prompt>liunx@ubuntu:~$ </prompt><userinput>sudo apt-get insall virt-manager</userinput>
+正在读取软件包列表... 完成
+正在分析软件包的依赖关系树
+正在读取状态信息... 完成
+virt-manager 已经是最新的版本了。
+升级了 0 个软件包，新安装了 0 个软件包， 要卸载 0 个软件包，有 150 个软件包未被升级。
+      </screen>
+      如果没有安装<emphasis>virt-manager</emphasis>，系统会下载安装的。如果安装成功的话，接下来
+      我们开始创建<emphasis>主机网络</emphasis>。启动<emphasis>virt-manager</emphasis>：
+    </para>
+    <menuchoice>
+      <guimenu>应用程序菜单</guimenu>
+      <guisubmenu>系统</guisubmenu>
+      <guimenuitem>虚拟系统管理器</guimenuitem>
+    </menuchoice>
+    <para>
+      进入<emphasis>virt-manager</emphasis>主界面，选择：
+    </para>
+    <menuchoice>
+      <guimenu>编辑</guimenu>
+      <guimenuitem>Connection Details</guimenuitem>
+    </menuchoice>
+    <para>
+      选择“虚拟网络”标签页，这时可以看到有一个<emphasis>default</emphasis>的虚拟网络
+      <emphasis>virbr0</emphasis>，并且自动启动的，为了验证虚拟网络是否启用，我们可以通过终端
+      看到结果：
+      <screen>
+<prompt>liunx@ubuntu:~/Work/DocBook/Work/code-farmer-note$ </prompt><userinput>ifconfig</userinput>
+eth0      Link encap:以太网  硬件地址 c8:60:00:61:06:16
+          inet 地址:192.168.2.100  广播:192.168.2.255  掩码:255.255.255.0
+          inet6 地址: fe80::ca60:ff:fe61:616/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  跃点数:1
+          接收数据包:5 错误:0 丢弃:0 过载:0 帧数:0
+          发送数据包:68 错误:0 丢弃:0 过载:0 载波:1
+          碰撞:0 发送队列长度:1000
+          接收字节:1360 (1.3 KB)  发送字节:10346 (10.3 KB)
+          中断:16
+
+lo        Link encap:本地环回
+          inet 地址:127.0.0.1  掩码:255.0.0.0
+          inet6 地址: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:16436  跃点数:1
+          接收数据包:54 错误:0 丢弃:0 过载:0 帧数:0
+          发送数据包:54 错误:0 丢弃:0 过载:0 载波:0
+          碰撞:0 发送队列长度:0
+          接收字节:4327 (4.3 KB)  发送字节:4327 (4.3 KB)
+
+virbr0    Link encap:以太网  硬件地址 ea:21:c3:5b:e6:1d
+          inet 地址:192.168.122.1  广播:192.168.122.255  掩码:255.255.255.0
+          UP BROADCAST MULTICAST  MTU:1500  跃点数:1
+          接收数据包:0 错误:0 丢弃:0 过载:0 帧数:0
+          发送数据包:0 错误:0 丢弃:0 过载:0 载波:0
+          碰撞:0 发送队列长度:0
+          接收字节:0 (0.0 B)  发送字节:0 (0.0 B)
+      </screen>
+      看，<emphasis>virbr0</emphasis>就是我们所需要的主机网络！当然了，你还可以添加更多的虚拟
+      网络，不过默认的目前已经够用了。
+    </para>
+  </section>
+  <section>
+    <title>搭建桥接网络</title>
+    <para>
+      桥接网络我们同样可以通过<emphasis>virt-manager</emphasis>添加，但是<emphasis>virt-manager</emphasis>
+      默认并没有创建桥接网络的，所以需要我们动手设置。打开虚拟系统管理器，进入<emphasis>Connection Details</emphasis>
+      选择网络接口，点击添加按钮，这是出现一个设置对话框，<emphasis>Interface type</emphasis>选择桥接，然后
+      点击下一步，<emphasis>名称</emphasis>使用默认的<emphasis>br0</emphasis>即可，当然你也可以选择一个拉风
+      的名字，<emphasis>Start mode</emphasis>选择<emphasis>onboot</emphasis>，<emphasis>Active now</emphasis>
+      勾选上吧，这样保证配置立即生效，<emphasis>IP settings</emphasis>可以选择<emphasis>DHCP</emphasis>，
+      也可以选择<emphasis>Static</emphasis>，最后选择桥接绑定的物理接口，这里选择<emphasis>eth0</emphasis>，
+      当然了，如果你有多块网卡的话，也可以选择别的接口，但是不要选择<emphasis>lo</emphasis>，这是系统内部的
+      回路系统，显然是不行的！最后点击完成，然后去上个厕所什么的，因为<emphasis>virt-manager</emphasis>创建
+      桥接的时候会耗费一些时间。
+      <para>
+        最终我们得到的就是下面的结果： 
+      <screen>
+<prompt>liunx@ubuntu:~/Work/DocBook/Work/code-farmer-note$ </prompt><userinput>ifconfig</userinput>
+br0       Link encap:以太网  硬件地址 c8:60:00:61:06:16
+          inet 地址:192.168.2.100  广播:255.255.255.255  掩码:255.255.255.0
+          inet6 地址: fe80::ca60:ff:fe61:616/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  跃点数:1
+          接收数据包:767 错误:0 丢弃:0 过载:0 帧数:0
+          发送数据包:8037 错误:0 丢弃:0 过载:0 载波:0
+          碰撞:0 发送队列长度:0
+          接收字节:37170 (37.1 KB)  发送字节:603782 (603.7 KB)
+
+eth0      Link encap:以太网  硬件地址 c8:60:00:61:06:16
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  跃点数:1
+          接收数据包:11267 错误:0 丢弃:0 过载:0 帧数:0
+          发送数据包:8037 错误:0 丢弃:0 过载:0 载波:1
+          碰撞:0 发送队列长度:1000
+          接收字节:3800860 (3.8 MB)  发送字节:616766 (616.7 KB)
+          中断:16
+
+lo        Link encap:本地环回
+          inet 地址:127.0.0.1  掩码:255.0.0.0
+          inet6 地址: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:16436  跃点数:1
+          接收数据包:24 错误:0 丢弃:0 过载:0 帧数:0
+          发送数据包:24 错误:0 丢弃:0 过载:0 载波:0
+          碰撞:0 发送队列长度:0
+          接收字节:2301 (2.3 KB)  发送字节:2301 (2.3 KB)
+
+virbr0    Link encap:以太网  硬件地址 d6:0f:1c:fd:6c:64
+          inet 地址:192.168.122.1  广播:192.168.122.255  掩码:255.255.255.0
+          UP BROADCAST MULTICAST  MTU:1500  跃点数:1
+          接收数据包:0 错误:0 丢弃:0 过载:0 帧数:0
+          发送数据包:0 错误:0 丢弃:0 过载:0 载波:0
+          碰撞:0 发送队列长度:0
+          接收字节:0 (0.0 B)  发送字节:0 (0.0 B)
+      </screen>
+      </para>
+    </para>
+  </section>
 </chapter>
+
