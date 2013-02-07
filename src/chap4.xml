@@ -1,0 +1,21 @@
+<chapter xml:id="chapter4" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
+  xmlns:xlink='http://www.w3.org/1999/xlink'>
+  <title>第四章：设备集成</title>
+  <para>
+  </para>
+  <section>
+    <title>组装路由器</title>
+    <para>
+      一台路由器究竟由什么构成的呢？当然了，我们不是在讨论硬件电路的设计问题，不用关心电源了，电路
+      布局之类的事情，我们关心是一台路由器是由哪些功能部分组成的。
+    </para>
+    <para>
+      首先，路由器的职责就是帮助我们上网的，那是肯定的了，要上网，那至少要有一个WAN口了，WAN口，顾名
+      思义，就是连接到电信运营商链路的端口了，他的前端可能是一只猫，两只狗，三只羊什么的东东，好了，
+      那些都是运营商的工作，我们就不必关心了。
+    </para>
+    <para>
+      好，接下来开始动手了！首先看看我们的<emphasis>路由器</emphasis>启动参数吧
+    </para>
+  </section>
+</chapter>

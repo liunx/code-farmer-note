@@ -2,9 +2,9 @@
 # Makefile for docbook
 #
 
-TARGETS = routerDIY.html 
-XMLS = routerDIY.xml chap1.xml chap2.xml chap3.xml appa.xml
-#routerDIY.pdf
+TARGETS = routerDIY.html #routerDIY.pdf
+XMLS = routerDIY.xml chap1.xml chap2.xml chap3.xml chap4.xml \
+       appa.xml
 
 XSLTPROC = /usr/bin/xsltproc
 FOP = /usr/bin/fop
@@ -20,7 +20,7 @@ routerDIY.html: $(XMLS) $(XSL)
 routerDIY.pdf: routerDIY.fo
 	$(FOP) -c $(FOPCFG) -pdf $@ $<
 
-routerDIY.fo: routerDIY.xml $(XSL)
+routerDIY.fo: $(XMLS) $(XSL)
 	$(XSLTPROC) -o $@ $(FOPXSL) $<
 
 clean:
