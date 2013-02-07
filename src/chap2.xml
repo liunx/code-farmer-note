@@ -132,5 +132,52 @@ virbr0    Link encap:以太网  硬件地址 d6:0f:1c:fd:6c:64
       </para>
     </para>
   </section>
+  <section>
+    <title>搭建VDE网络</title>
+    <para>
+      VDE的全称叫做<emphasis>虚拟分布式网络</emphasis>说得通俗一点就是虚拟网络设备，当然VDE项目的目标
+      远远不止如此，但是对于我们来说，这样理解已经够用了。再用简单的语言解释一下，VDE就是通过程序来模拟
+      网络设备，比如交换机（<emphasis>vde_switch</emphasis>），路由器（<emphasis>slirpvde</emphasis>）
+      等。好，接下来让我们看看他的庐山真面目吧：
+      <screen>
+<prompt>liunx@ubuntu:~/Work/Emulator/work/vde$</prompt> <userinput>vde_switch -s /tmp/switch</userinput>
+
+vde$
+      </screen>
+      嗯，看样子没什么反应啊，这是什么情况？好吧，接下来就让我对这个命令做个解释，你就会明白了。
+      <emphasis>vde_switch</emphasis>用来模拟交换机设备的，有了交换机，我们就可以接设备了，但是总要有个
+      接口才行啊，好那么我们继续往下看：
+      <screen>
+<prompt>liunx@ubuntu:~$ </prompt><userinput>ls /tmp/switch/</userinput>
+ctl
+liunx@ubuntu:~$
+      </screen>
+      这里<emphasis>vde_switch</emphasis>创建了名为<filename>/tmp/switch/ctl</filename>的<emphasis>socket</emphasis>
+      文件，这里就是链接虚拟交换机的接口，我们只要在<emphasis>qemu</emphasis>中指定这个文件，就可以连接到虚拟交换机
+      上了，下面看看我们的配置：
+      <screen>
+<prompt>liunx@ubuntu:~/Work/OpenWrt/work/x86$ </prompt><userinput>cat boot.sh</userinput>
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
+
+#       -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:01 \
+#       -net vde,sock=/tmp/vde.ctl
+#       -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:01 \
+#       -net tap,vlan=0,ifname=openwrt0,script=qemu-ifup,downscript=qemu-ifdown \
+
+/usr/local/bin/qemu-system-i386 \
+        -m 64M \
+        -kernel openwrt-x86-generic-vmlinuz \
+        -hda openwrt-x86-generic-rootfs-ext4.img \
+        -append "root=/dev/sda console=ttyS0" \
+        -enable-kvm \
+        -nographic \
+        -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:01 \
+        -net vde,sock=/tmp/switch
+      </screen>
+      看我们最后的<emphasis>-net</emphasis>配置，上面的配置是制定网卡模型和MAC地址，这个是通用的，主要是后面的配置
+      我们指定了<emphasis>vde</emphasis>网络，这样我们的<emphasis>VDE</emphasis>网络就配置好了。
+    </para>
+  </section>
 </chapter>
 
