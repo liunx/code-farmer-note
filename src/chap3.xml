@@ -8,22 +8,7 @@
     和实验，而且内存占用少，所以配置相对低的电脑也可以轻松运行，可以说物美价廉。
   </para>
   <section>
-    <title>组装路由器</title>
-    <para>
-      一台路由器究竟由什么构成的呢？当然了，我们不是在讨论硬件电路的设计问题，不用关心电源了，电路
-      布局之类的事情，我们关心是一台路由器是由哪些功能部分组成的。
-    </para>
-    <para>
-      首先，路由器的职责就是帮助我们上网的，那是肯定的了，要上网，那至少要有一个WAN口了，WAN口，顾名
-      思义，就是连接到电信运营商链路的端口了，他的前端可能是一只猫，两只狗，三只羊什么的东东，好了，
-      那些都是运营商的工作，我们就不必关心了。
-    </para>
-    <para>
-      好，接下来开始动手了！首先看看我们的<emphasis>路由器</emphasis>启动参数吧
-    </para>
-  </section>
-  <section>
-    <title>搭建“客户端”系统</title>
+    <title>运行OpenWrt</title>
     <para>
       好了，外围环境搞定了，接下来就是要选择客户端系统了，一台路由器不仅仅有硬件系统构成的，还需要软件系统
       配合才能发挥作用，否则就是<emphasis>裸奔</emphasis>了。客户端系统的选用标准前面我已介绍过了，下面就
@@ -191,5 +176,160 @@ liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$
     </imageobject>
     </para>
   </section>
+  <section>
+    <title>运行buildroot</title>
+    <para>
+      <emphasis>buildroot</emphasis>可是<emphasis>openwrt</emphasis>的老前辈了，因为<emphasis>openwrt</emphasis>
+      项目就是在<emphasis>buildroot</emphasis>的基础上构建的，不免让人对<emphasis>buildroot</emphasis>
+      里的大牛们新生敬意。不过运行<emphasis>buildroot</emphasis>就没有那么好的“现成饭”可以吃了，我们
+      不得不响应伟大领袖的号召--“自己动手，丰衣足食”。大家一看便知，这是让我们自己编译<emphasis>buildroot</emphasis>
+      了，还好，<emphasis>buildroot</emphasis>的配置很简单，还有现成的模板可供我们参考，编译起来也比
+      <emphasis>openwrt</emphasis>省时省力，而且还有文档可供参考，我们不必“摸着石头过河”了。
+    </para>
+    <para>
+      <emphasis>第一步</emphasis>下载源代码，解决依赖关系。进入这里<ulink url="http://buildroot.uclibc.org/downloads/"></ulink>
+      下载最近的一个稳定版本，<emphasis>buildroot</emphasis>是按日期发布的，所以很容易找到最新的版本，这里我们下载
+      <ulink url="http://buildroot.uclibc.org/downloads/buildroot-2012.11.tar.bz2">buildroot-2012.11.tar.bz2</ulink>
+      接下来解压：
+<prompt>liunx@ubuntu:~/Work/Buildroot/dl$ </prompt><userinput>tar -xf buildroot-2012.11.tar.bz2 -C ../work/</userinput>
+      由于<emphasis>buildroot</emphasis>本身只是<emphasis>Makefile</emphasis>和<emphasis>patch</emphasis>的集合，本身并没有
+      含有软件的源代码，所以需要下载和编译源代码，因此我们需要满足这些条件才行，<emphasis>buildroot</emphasis>
+      所依赖的软件可以参考这里<ulink url="http://buildroot.uclibc.org/downloads/manual/manual.html#requirement"></ulink>
+      所以请务必确保满足这些以来关系。
+    </para>
+    <para>
+      <emphasis>第二步</emphasis>配置。<emphasis>buildroot</emphasis>支持多种系统架构，并且包含很多一配置好的模板，
+      其中就有支持<emphasis>x86</emphasis>的模板，我们只需在他的基础上做一些调整即可：
+      <screen>
+<prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11$ </prompt><userinput>make help</userinput>
+Cleaning:
+  clean                  - delete all files created by build
+  distclean              - delete all non-source files (including .config)
 
+Build:
+  all                    - make world
+  &lt;package&gt;-rebuild      - force recompile &lt;package&gt;
+  &lt;package&gt;-reconfigure  - force reconfigure &lt;package&gt;
+
+Configuration:
+  menuconfig             - interactive curses-based configurator
+  nconfig                - interactive ncurses-based configurator
+  xconfig                - interactive Qt-based configurator
+  gconfig                - interactive GTK-based configurator
+  oldconfig              - resolve any unresolved symbols in .config
+  randconfig             - New config with random answer to all options
+  defconfig              - New config with default answer to all options
+                             BR2_DEFCONFIG, if set, is used as input
+  savedefconfig          - Save current config as ./defconfig (minimal config)
+  allyesconfig           - New config where all options are accepted with yes
+  allnoconfig            - New config where all options are answered with no
+  randpackageconfig      - New config with random answer to package options
+  allyespackageconfig    - New config where pkg options are accepted with yes
+  allnopackageconfig     - New config where package options are answered with no
+
+Documentation:
+  manual                 - build manual in HTML, split HTML, PDF and txt
+  manual-html            - build manual in HTML
+  manual-split-html      - build manual in split HTML
+  manual-pdf             - build manual in PDF
+  manual-txt             - build manual in txt
+  manual-epub            - build manual in ePub
+
+Miscellaneous:
+  source                 - download all sources needed for offline-build
+  source-check           - check selected packages for valid download URLs
+  external-deps          - list external packages used
+  legal-info             - generate info about license compliance
+
+  make V=0|1             - 0 => quiet build (default), 1 => verbose build
+  make O=dir             - Locate all output files in "dir", including .config
+
+  arm_foundationv8_defconfig          - Build for arm_foundationv8
+  armadeus_apf9328_defconfig          - Build for armadeus_apf9328
+  at91rm9200df_defconfig              - Build for at91rm9200df
+  at91sam9260dfc_defconfig            - Build for at91sam9260dfc
+  at91sam9261ek_defconfig             - Build for at91sam9261ek
+  at91sam9263ek_defconfig             - Build for at91sam9263ek
+  at91sam9g20dfc_defconfig            - Build for at91sam9g20dfc
+  atngw100_defconfig                  - Build for atngw100
+  atstk100x_defconfig                 - Build for atstk100x
+  beaglebone_defconfig                - Build for beaglebone
+  calao_qil_a9260_defconfig           - Build for calao_qil_a9260
+  calao_usb_a9263_defconfig           - Build for calao_usb_a9263
+  calao_usb_a9g20_lpw_defconfig       - Build for calao_usb_a9g20_lpw
+  ea3250_defconfig                    - Build for ea3250
+  fdi3250_defconfig                   - Build for fdi3250
+  integrator926_defconfig             - Build for integrator926
+  kb9202_defconfig                    - Build for kb9202
+  mini2440_defconfig                  - Build for mini2440
+  mx53loco_defconfig                  - Build for mx53loco
+  nitrogen6x_defconfig                - Build for nitrogen6x
+  pandaboard_defconfig                - Build for pandaboard
+  phy3250_defconfig                   - Build for phy3250
+  qemu_arm_versatile_defconfig        - Build for qemu_arm_versatile
+  qemu_arm_vexpress_defconfig         - Build for qemu_arm_vexpress
+  qemu_microblazebe_mmu_defconfig     - Build for qemu_microblazebe_mmu
+  qemu_microblazeel_mmu_defconfig     - Build for qemu_microblazeel_mmu
+  qemu_mips64_malta_defconfig         - Build for qemu_mips64_malta
+  qemu_mips_malta_defconfig           - Build for qemu_mips_malta
+  qemu_mipsel_malta_defconfig         - Build for qemu_mipsel_malta
+  qemu_ppc_g3beige_defconfig          - Build for qemu_ppc_g3beige
+  qemu_ppc_mpc8544ds_defconfig        - Build for qemu_ppc_mpc8544ds
+  qemu_sh4_r2d_defconfig              - Build for qemu_sh4_r2d
+  qemu_sparc_ss10_defconfig           - Build for qemu_sparc_ss10
+  qemu_x86_64_defconfig               - Build for qemu_x86_64
+  qemu_x86_defconfig                  - Build for qemu_x86
+  s6lx9_microboard_defconfig          - Build for s6lx9_microboard
+  sheevaplug_defconfig                - Build for sheevaplug
+
+See docs/README, or generate the Buildroot manual for further details
+      </screen>
+      看<emphasis>qemu_x86_defconfig</emphasis>，我们要的就是他：
+      <screen>
+<prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11$ </prompt><userinput>make qemu_x86_defconfig</userinput>
+mkdir -p /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config/lxdialog
+make CC="/usr/bin/gcc" HOSTCC="/usr/bin/gcc" obj=/home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config -C support/kconfig -f Makefile.br conf
+make[1]: 正在进入目录 `/home/liunx/Work/Buildroot/work/buildroot-2012.11/support/kconfig'
+/usr/bin/gcc -DCURSES_LOC="&lt;ncurses.h&gt;" -DLOCALE  -I/home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config  -MM *.c &gt; /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config/.depend 2&gt;/dev/null || :
+make[1]:正在离开目录 `/home/liunx/Work/Buildroot/work/buildroot-2012.11/support/kconfig'
+make[1]: 正在进入目录 `/home/liunx/Work/Buildroot/work/buildroot-2012.11/support/kconfig'
+/usr/bin/gcc -DCURSES_LOC="&lt;ncurses.h&gt;" -DLOCALE  -I/home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config   -c conf.c -o /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config/conf.o
+/usr/bin/gcc -DCURSES_LOC="&lt;ncurses.h&gt;" -DLOCALE  -I/home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config  -I. -c /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config/zconf.tab.c -o /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config/zconf.tab.o
+/usr/bin/gcc -DCURSES_LOC="&lt;ncurses.h&gt;" -DLOCALE  -I/home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config   /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config/conf.o /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config/zconf.tab.o  -o /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config/conf
+rm /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config/zconf.tab.c
+make[1]:正在离开目录 `/home/liunx/Work/Buildroot/work/buildroot-2012.11/support/kconfig'
+#
+# configuration written to /home/liunx/Work/Buildroot/work/buildroot-2012.11/.config
+#
+      </screen>
+      生成默认配置了，接下来我们要做一些定制了。首先定制一下<emphasis>toolchain</emphasis>，默认的工具链
+      支持的功能较少，比如不支持<emphasis>C++</emphasis>，所以为了以后能编译更多的软件，我们尽量打开所有
+      的功能，因为<emphasis>buildroot</emphasis>会自动编译工具链的，而这个编译又很费时间，所以我们最好是
+      一次成型。
+    <imageobject>
+      <imagedata align="left" width="10in" format="PNG"
+        fileref="../images/buildroot-toolchain.png"/>
+    </imageobject>
+    注意红色区域，这里是重点，当然一些杂七杂八的东西你也可以勾选，但要记住，“宁可错杀一千，不可放过一个”！
+    接下来定制软件包，默认配置的软件包很少，这里我们要添加一些网络相关的软件包。进入<emphasis>Package Selection
+      for the target</emphasis>，然后勾选<emphasis>Show package that are also provided by busbox</emphasis>，
+    因为<emphasis>busybox</emphasis>的替代功能有限，还是用原装的好。进入<emphasis>Networking applications</emphasis>
+    这里，我们根据需要选择一些应用程序即可。
+    </para>
+    <para>
+      还有一个细节的地方需要修改，我们需要系统将信息输出到串口，这样方便使用，所以我们将
+      <menuchoice>
+        <guimenu>System configuration</guimenu>
+        <guimenuitem>Port to run a getty (login prompt) on</guimenuitem>
+      </menuchoice>
+      的<emphasis>tty1</emphasis>改为<emphasis>ttyS0</emphasis>，这样我们可以充分利用<emphasis>qemu</emphasis>
+      的<emphasis>-nographic</emphasis>选项，直接在终端里显示，而不产生麻烦的窗口界面了，毕竟我们的设备
+      没有图像界面，使用窗口显示真是很麻烦的。
+    </para>
+    <para>
+      最后，保存配置，退出，然后<command>make</command>，耐心等待吧，如果网络顺畅，电脑给力的话，
+      一个小时内应该可以解决战斗的。<emphasis>buildroot</emphasis>会自动根据你的电脑CPU核心数来
+      分配线程的，充分利用资源，其实花时间的地方源于下载代码，这里要看你的网络情况了。
+    </para>
+  </section>
 </chapter>
