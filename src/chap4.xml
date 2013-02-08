@@ -2,6 +2,8 @@
   xmlns:xlink='http://www.w3.org/1999/xlink'>
   <title>第四章：设备集成</title>
   <para>
+    前面，我们介绍了如何搭建运行环境，网络环境，还有运行嵌入式系统，但是一切的一切也只是万里长征第一步，
+    接下来我们就要到设计和集成的阶段了。
   </para>
   <section>
     <title>组装路由器</title>
@@ -15,7 +17,337 @@
       那些都是运营商的工作，我们就不必关心了。
     </para>
     <para>
-      好，接下来开始动手了！首先看看我们的<emphasis>路由器</emphasis>启动参数吧
+      好，接下来开始动手了！首先看看我们的<emphasis>路由器</emphasis>应该是这幅模样：
+      <imageobject>
+        <imagedata align="right" width="6in" format="PNG"
+          fileref="../images/Router.png"/>
+      </imageobject>
+      这里，我们设计的路由器功能是有1个<emphasis>wan</emphasis>口，4个<emphasis>lan</emphasis>口组成。
+      看起来像一只章鱼，我们暂且给他起个名字叫<quote>老章</quote>吧，<quote>老章</quote>设计草图出来
+      了，下面进入建造阶段：
     </para>
+    <para>
+      下面看看我们的<emphasis>qemu</emphasis>的配置：
+      <screen>
+<prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images$ </prompt><userinput>ls</userinput>
+boot.sh  bzImage  rootfs.ext2
+      </screen>
+      <screen>
+<prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images$ </prompt><userinput>cat boot.sh</userinput>
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
+
+/usr/local/bin/qemu-system-i386 \
+        -m 64M \
+        -kernel  bzImage \
+        -hda  rootfs.ext2 \
+        -append "root=/dev/sda console=ttyS0" \
+        -enable-kvm \
+        -nographic \
+        -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:01 \
+        -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:12 \
+        -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:13 \
+        -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:14 \
+        -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:15
+      </screen>
+      从配置参数中可以看出，我们创建了5个网卡，基本上，<quote>老章</quote>的躯体就算是出来了。可是
+      奇怪的是，根本无法区别谁是<emphasis>wan口</emphasis>，谁是<emphasis>lan口</emphasis>啊。接下
+      来需要系统来划分功能了。默认<emphasis>linux</emphasis>配置并不支持e1000的网卡，所以我们需要
+      配置内核：进入<emphasis>buildroot</emphasis>顶层目录，然后<command>make linux-menuconfig</command>
+      此时我们进入了内核配置界面，勾选
+      <menuchoice>
+        <guimenu>Device Drivers</guimenu>
+        <guisubmenu>Network device support</guisubmenu>
+        <guisubmenu>Ethernet driver support</guisubmenu>
+        <guimenuitem>Intel(R) PRO/1000 Gigabit Ethernet support</guimenuitem>
+      </menuchoice>
+      此时，内核就可以识别和驱动<emphasis>qemu e1000</emphasis>的网卡模型了。好，保存退出，然后重新
+      <command>make</command>。
+    </para>
+    <para>
+      OK，现在让我运行一下看看效果：
+      <screen>
+<prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images$ </prompt><userinput>./boot.sh</userinput>
+Warning: vlan 0 is not connected to host network
+Linux version 3.6.6 (liunx@ubuntu) (gcc version 4.6.3 (Buildroot 2012.11) ) #2 Thu Feb 7 22:59:51 CST 2013
+e820: BIOS-provided physical RAM map:
+BIOS-e820: [mem 0x0000000000000000-0x000000000009fbff] usable
+BIOS-e820: [mem 0x000000000009fc00-0x000000000009ffff] reserved
+BIOS-e820: [mem 0x00000000000f0000-0x00000000000fffff] reserved
+BIOS-e820: [mem 0x0000000000100000-0x0000000003ffdfff] usable
+BIOS-e820: [mem 0x0000000003ffe000-0x0000000003ffffff] reserved
+BIOS-e820: [mem 0x00000000feffc000-0x00000000feffffff] reserved
+BIOS-e820: [mem 0x00000000fffc0000-0x00000000ffffffff] reserved
+Notice: NX (Execute Disable) protection missing in CPU!
+DMI 2.4 present.
+e820: last_pfn = 0x3ffe max_arch_pfn = 0x100000
+init_memory_mapping: [mem 0x00000000-0x03ffdfff]
+ACPI: RSDP 000fd8c0 00014 (v00 BOCHS )
+ACPI: RSDT 03ffe4b0 00034 (v01 BOCHS  BXPCRSDT 00000001 BXPC 00000001)
+ACPI: FACP 03ffff80 00074 (v01 BOCHS  BXPCFACP 00000001 BXPC 00000001)
+ACPI: DSDT 03ffe4f0 011A9 (v01   BXPC   BXDSDT 00000001 INTL 20090123)
+ACPI: FACS 03ffff40 00040
+ACPI: SSDT 03fff800 00735 (v01 BOCHS  BXPCSSDT 00000001 BXPC 00000001)
+ACPI: APIC 03fff6e0 00078 (v01 BOCHS  BXPCAPIC 00000001 BXPC 00000001)
+ACPI: HPET 03fff6a0 00038 (v01 BOCHS  BXPCHPET 00000001 BXPC 00000001)
+0MB HIGHMEM available.
+63MB LOWMEM available.
+  mapped low ram: 0 - 03ffe000
+  low ram: 0 - 03ffe000
+Zone ranges:
+  DMA      [mem 0x00010000-0x00ffffff]
+  Normal   [mem 0x01000000-0x03ffdfff]
+  HighMem  empty
+Movable zone start for each node
+Early memory node ranges
+  node   0: [mem 0x00010000-0x0009efff]
+  node   0: [mem 0x00100000-0x03ffdfff]
+ACPI: PM-Timer IO Port: 0xb008
+e820: [mem 0x04000000-0xfeffbfff] available for PCI devices
+Built 1 zonelists in Zone order, mobility grouping on.  Total pages: 16141
+Kernel command line: root=/dev/sda console=ttyS0
+PID hash table entries: 256 (order: -2, 1024 bytes)
+Dentry cache hash table entries: 8192 (order: 3, 32768 bytes)
+Inode-cache hash table entries: 4096 (order: 2, 16384 bytes)
+__ex_table already sorted, skipping sort
+Initializing CPU#0
+Initializing HighMem for node 0 (00000000:00000000)
+Memory: 60376k/65528k available (2611k kernel code, 4700k reserved, 903k data, 284k init, 0k highmem)
+virtual kernel memory layout:
+    fixmap  : 0xfffe4000 - 0xfffff000   ( 108 kB)
+    pkmap   : 0xff800000 - 0xffc00000   (4096 kB)
+    vmalloc : 0xc47fe000 - 0xff7fe000   ( 944 MB)
+    lowmem  : 0xc0000000 - 0xc3ffe000   (  63 MB)
+      .init : 0xc136f000 - 0xc13b6000   ( 284 kB)
+      .data : 0xc128cf3b - 0xc136ec60   ( 903 kB)
+      .text : 0xc1000000 - 0xc128cf3b   (2611 kB)
+Checking if this processor honours the WP bit even in supervisor mode...Ok.
+SLUB: Genslabs=15, HWalign=32, Order=0-3, MinObjects=0, CPUs=1, Nodes=1
+NR_IRQS:16 nr_irqs:16 16
+Console: colour VGA+ 80x25
+console [ttyS0] enabled
+tsc: Fast TSC calibration using PIT
+tsc: Detected 3013.507 MHz processor
+Calibrating delay loop (skipped), value calculated using timer frequency.. 6027.01 BogoMIPS (lpj=12054028)
+pid_max: default: 32768 minimum: 301
+Mount-cache hash table entries: 512
+Last level iTLB entries: 4KB 0, 2MB 0, 4MB 0
+Last level dTLB entries: 4KB 0, 2MB 0, 4MB 0
+tlb_flushall_shift is 0xffffffff
+CPU: AMD QEMU Virtual CPU version 1.3.50 stepping 03
+ACPI: Core revision 20120711
+ACPI: setting ELCR to 0200 (from 0c00)
+Performance Events: Broken PMU hardware detected, using software events only.
+Failed to access perfctr msr (MSR c0010001 is ffffffffffffffff)
+NET: Registered protocol family 16
+ACPI: bus type pci registered
+PCI: PCI BIOS revision 2.10 entry at 0xffe77, last bus=0
+PCI: Using configuration type 1 for base access
+bio: create slab &lt;bio-0&gt; at 0
+ACPI: Added _OSI(Module Device)
+ACPI: Added _OSI(Processor Device)
+ACPI: Added _OSI(3.0 _SCP Extensions)
+ACPI: Added _OSI(Processor Aggregator Device)
+ACPI: Interpreter enabled
+ACPI: (supports S0 S3 S5)
+ACPI: Using PIC for interrupt routing
+PCI: Using host bridge windows from ACPI; if necessary, use "pci=nocrs" and report a bug
+ACPI: PCI Root Bridge [PCI0] (domain 0000 [bus 00-ff])
+pci_root PNP0A03:00: fail to add MMCONFIG information, can't access extended PCI configuration space under this bridge.
+PCI host bridge to bus 0000:00
+pci_bus 0000:00: root bus resource [bus 00-ff]
+pci_bus 0000:00: root bus resource [io  0x0000-0x0cf7]
+pci_bus 0000:00: root bus resource [io  0x0d00-0xffff]
+pci_bus 0000:00: root bus resource [mem 0x000a0000-0x000bffff]
+pci_bus 0000:00: root bus resource [mem 0x80000000-0xfebfffff]
+pci 0000:00:01.3: quirk: [io  0xb000-0xb03f] claimed by PIIX4 ACPI
+pci 0000:00:01.3: quirk: [io  0xb100-0xb10f] claimed by PIIX4 SMB
+ pci0000:00: Unable to request _OSC control (_OSC support mask: 0x08)
+ACPI: PCI Interrupt Link [LNKA] (IRQs 5 *10 11)
+ACPI: PCI Interrupt Link [LNKB] (IRQs 5 *10 11)
+ACPI: PCI Interrupt Link [LNKC] (IRQs 5 10 *11)
+ACPI: PCI Interrupt Link [LNKD] (IRQs 5 10 *11)
+ACPI: PCI Interrupt Link [LNKS] (IRQs *9)
+vgaarb: device added: PCI:0000:00:02.0,decodes=io+mem,owns=io+mem,locks=none
+vgaarb: loaded
+vgaarb: bridge control possible 0000:00:02.0
+SCSI subsystem initialized
+ACPI: bus type scsi registered
+Advanced Linux Sound Architecture Driver Version 1.0.25.
+PCI: Using ACPI for IRQ routing
+Switching to clocksource pit
+pnp: PnP ACPI init
+ACPI: bus type pnp registered
+pnp: PnP ACPI: found 8 devices
+ACPI: ACPI bus type pnp unregistered
+Switching to clocksource acpi_pm
+NET: Registered protocol family 2
+TCP established hash table entries: 2048 (order: 2, 16384 bytes)
+TCP bind hash table entries: 2048 (order: 1, 8192 bytes)
+TCP: Hash tables configured (established 2048 bind 2048)
+TCP: reno registered
+UDP hash table entries: 256 (order: 0, 4096 bytes)
+UDP-Lite hash table entries: 256 (order: 0, 4096 bytes)
+NET: Registered protocol family 1
+RPC: Registered named UNIX socket transport module.
+RPC: Registered udp transport module.
+RPC: Registered tcp transport module.
+RPC: Registered tcp NFSv4.1 backchannel transport module.
+pci 0000:00:00.0: Limiting direct PCI/PCI transfers
+pci 0000:00:01.0: PIIX3: Enabling Passive Release
+pci 0000:00:01.0: Activating ISA DMA hang workarounds
+io scheduler noop registered (default)
+input: Power Button as /devices/LNXSYSTM:00/LNXPWRBN:00/input/input0
+ACPI: Power Button [PWRF]
+Serial: 8250/16550 driver, 4 ports, IRQ sharing disabled
+serial8250: ttyS0 at I/O 0x3f8 (irq = 4) is a 16550A
+00:06: ttyS0 at I/O 0x3f8 (irq = 4) is a 16550A
+scsi0 : ata_piix
+scsi1 : ata_piix
+ata1: PATA max MWDMA2 cmd 0x1f0 ctl 0x3f6 bmdma 0xc140 irq 14
+ata2: PATA max MWDMA2 cmd 0x170 ctl 0x376 bmdma 0xc148 irq 15
+<emphasis>
+e1000: Intel(R) PRO/1000 Network Driver - version 7.3.21-k8-NAPI
+e1000: Copyright (c) 1999-2006 Intel Corporation.
+</emphasis>
+ACPI: PCI Interrupt Link [LNKC] enabled at IRQ 11
+ata2.00: ATAPI: QEMU DVD-ROM, 1.3.50, max UDMA/100
+ata1.00: ATA-7: QEMU HARDDISK, 1.3.50, max UDMA/100
+ata1.00: 16494 sectors, multi 16: LBA48
+ata2.00: configured for MWDMA2
+ata1.00: configured for MWDMA2
+scsi 0:0:0:0: Direct-Access     ATA      QEMU HARDDISK    1.3. PQ: 0 ANSI: 5
+scsi 1:0:0:0: CD-ROM            QEMU     QEMU DVD-ROM     1.3. PQ: 0 ANSI: 5
+sd 0:0:0:0: [sda] 16494 512-byte logical blocks: (8.44 MB/8.05 MiB)
+sd 0:0:0:0: [sda] Write Protect is off
+sd 0:0:0:0: [sda] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
+ sda: unknown partition table
+sd 0:0:0:0: [sda] Attached SCSI disk
+e1000 0000:00:03.0: eth0: (PCI:33MHz:32-bit) 52:54:00:12:34:01
+e1000 0000:00:03.0: eth0: Intel(R) PRO/1000 Network Connection
+ACPI: PCI Interrupt Link [LNKD] enabled at IRQ 11
+e1000 0000:00:04.0: eth1: (PCI:33MHz:32-bit) 52:54:00:12:34:12
+e1000 0000:00:04.0: eth1: Intel(R) PRO/1000 Network Connection
+ACPI: PCI Interrupt Link [LNKA] enabled at IRQ 10
+tsc: Refined TSC clocksource calibration: 3013.705 MHz
+Switching to clocksource tsc
+e1000 0000:00:05.0: eth2: (PCI:33MHz:32-bit) 52:54:00:12:34:13
+e1000 0000:00:05.0: eth2: Intel(R) PRO/1000 Network Connection
+ACPI: PCI Interrupt Link [LNKB] enabled at IRQ 10
+e1000 0000:00:06.0: eth3: (PCI:33MHz:32-bit) 52:54:00:12:34:14
+e1000 0000:00:06.0: eth3: Intel(R) PRO/1000 Network Connection
+e1000 0000:00:07.0: eth4: (PCI:33MHz:32-bit) 52:54:00:12:34:15
+e1000 0000:00:07.0: eth4: Intel(R) PRO/1000 Network Connection
+i8042: PNP: PS/2 Controller [PNP0303:KBD,PNP0f13:MOU] at 0x60,0x64 irq 1,12
+serio: i8042 KBD port at 0x60,0x64 irq 1
+serio: i8042 AUX port at 0x60,0x64 irq 12
+mousedev: PS/2 mouse device common for all mice
+cpuidle: using governor ladder
+TCP: cubic registered
+NET: Registered protocol family 17
+input: AT Translated Set 2 keyboard as /devices/platform/i8042/serio0/input/input1
+ALSA device list:
+  No soundcards found.
+VFS: Mounted root (ext2 filesystem) readonly on device 8:0.
+Freeing unused kernel memory: 284k freed
+EXT2-fs (sda): warning: mounting unchecked fs, running e2fsck is recommended
+Starting logging: OK
+Initializing random number generator... done.
+Starting network...
+udhcpc (v1.20.2) started
+Sending discover...
+e1000: eth0 NIC Link is Up 1000 Mbps Full Duplex, Flow Control: RX
+Sending discover...
+Sending discover...
+No lease, failing
+
+Welcome to Buildroot
+buildroot login: root
+<prompt># </prompt>
+<prompt># </prompt><userinput>ifconfig -a</userinput>
+eth0      Link encap:Ethernet  HWaddr 52:54:00:12:34:01
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:2 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:0 (0.0 B)  TX bytes:644 (644.0 B)
+
+eth1      Link encap:Ethernet  HWaddr 52:54:00:12:34:12
+          BROADCAST MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+eth2      Link encap:Ethernet  HWaddr 52:54:00:12:34:13
+          BROADCAST MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+eth3      Link encap:Ethernet  HWaddr 52:54:00:12:34:14
+          BROADCAST MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+eth4      Link encap:Ethernet  HWaddr 52:54:00:12:34:15
+          BROADCAST MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          UP LOOPBACK RUNNING  MTU:16436  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+      </screen>
+      这里我们没有创建<emphasis>tap</emphasis>连接，因此不需要超级用户权限。<emphasis>buildroot</emphasis>
+      提示登录账户时，我们只需输入<quote>root</quote>即可，不需要密码。运行<command>ifconfig -a</command>
+      可以看到，5块网络赫然在目。
+    </para>
+    <qandaset defaultlabel='qanda'>
+      <question>
+        <para>
+          妈呀，<emphasis>qemu</emphasis>退不出来了！坑爹啊这是？！
+        </para>
+      </question>
+      <answer>
+        <para>
+          大哥，想退出您就<command>poweroff</command>，再不行您就<keycap>Ctrl-a</keycap>加<keycap>x</keycap>
+          保管行！
+        </para>
+      </answer>
+    </qandaset>
+    <section>
+      <title>lan侧桥接设置</title>
+      <para>
+        其实，路由器的<emphasis>wan/lan</emphasis>的区分是由软件系统进行功能划分的，<emphasis>lan侧</emphasis>
+        和<emphasis>wan侧</emphasis>的功能显然是有区别的，<emphasis>wan侧</emphasis>网络只需获取一个有效的
+        地址即可工作了，而<emphasis>lan侧</emphasis>则需要桥接进行统一管理。
+      </para>
+      <para>
+        <emphasis>lan侧</emphasis>桥接的设备需要两个层面的配置，一个是内核打开桥接功能，另一个是应用层
+        软件进行桥接设置。首先，配置内核：<command>make linux-menuconfig</command>，勾选
+        <menuchoice>
+          <guimenu>Networking support</guimenu>
+          <guisubmenu>Networking options</guisubmenu>
+          <guimenuitem>802.1d Ethernet Bridging</guimenuitem>
+        </menuchoice>
+        ，保存退出。接下来 <command>make menuconfig</command>，勾选
+        <menuchoice>
+          <guimenu>Package Selection for the target</guimenu>
+          <guisubmenu>Networking applications</guisubmenu>
+          <guimenuitem>bridge-utils</guimenuitem>
+        </menuchoice>
+        然后保存退出。最后 <command>make</command>！
+      </para>
+    </section>
   </section>
 </chapter>

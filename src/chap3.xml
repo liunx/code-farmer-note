@@ -331,5 +331,12 @@ make[1]:正在离开目录 `/home/liunx/Work/Buildroot/work/buildroot-2012.11/su
       一个小时内应该可以解决战斗的。<emphasis>buildroot</emphasis>会自动根据你的电脑CPU核心数来
       分配线程的，充分利用资源，其实花时间的地方源于下载代码，这里要看你的网络情况了。
     </para>
+    <para>
+      编译完成后，生成的镜像在<filename>output/images</filename>目录。
+      <screen>
+<prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11$ </prompt><userinput>ls output/images/</userinput>
+bzImage  rootfs.ext2
+      </screen>
+    </para>
   </section>
 </chapter>
