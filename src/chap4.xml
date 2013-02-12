@@ -332,21 +332,246 @@ lo        Link encap:Local Loopback
         和<emphasis>wan侧</emphasis>的功能显然是有区别的，<emphasis>wan侧</emphasis>网络只需获取一个有效的
         地址即可工作了，而<emphasis>lan侧</emphasis>则需要桥接进行统一管理。
       </para>
+      <section>
+        <title>选材</title>
+        <para>
+          <emphasis>lan侧</emphasis>桥接的设备需要两个层面的配置，一个是内核打开桥接功能，另一个是应用层
+          软件进行桥接设置。首先，配置内核：<command>make linux-menuconfig</command>，勾选
+          <menuchoice>
+            <guimenu>Networking support</guimenu>
+            <guisubmenu>Networking options</guisubmenu>
+            <guimenuitem>802.1d Ethernet Bridging</guimenuitem>
+          </menuchoice>
+          ，保存退出。接下来 <command>make menuconfig</command>，进入
+          <menuchoice>
+            <guimenu>Package Selection for the target</guimenu>
+            <guisubmenu>Networking applications</guisubmenu>
+          </menuchoice>勾选<quote>Bridge-utils</quote>，然后勾选<quote>dnsmasq</quote>，这时会出现多个选项，我们只需
+          勾选<quote>dhcp support</quote>就足够了，最后保存退出，<command>make</command>！
+        </para>
+      </section>
       <para>
-        <emphasis>lan侧</emphasis>桥接的设备需要两个层面的配置，一个是内核打开桥接功能，另一个是应用层
-        软件进行桥接设置。首先，配置内核：<command>make linux-menuconfig</command>，勾选
-        <menuchoice>
-          <guimenu>Networking support</guimenu>
-          <guisubmenu>Networking options</guisubmenu>
-          <guimenuitem>802.1d Ethernet Bridging</guimenuitem>
-        </menuchoice>
-        ，保存退出。接下来 <command>make menuconfig</command>，勾选
-        <menuchoice>
-          <guimenu>Package Selection for the target</guimenu>
-          <guisubmenu>Networking applications</guisubmenu>
-          <guimenuitem>bridge-utils</guimenuitem>
-        </menuchoice>
-        然后保存退出。最后 <command>make</command>！
+        好，编译成功并不意味着lan侧桥接就搞定了，我们还要添加相关的启动脚本和配置文件。
+      </para>
+      <section>
+        <title>添加<emphasis>vde wire</emphasis></title>
+        <para>
+          上文中我们说到组装<quote>老章</quote>的躯体，虽然网卡装上了，但是却没有没有和外界联系的接口，显然是
+          个<quote>中看不中用</quote>的货色，这怎么行呢？那么，我们需要给他提供一个和外部链接的线了：
+          <screen>
+<prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images$ </prompt><userinput>cat boot.sh</userinput>
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
+
+/usr/local/bin/qemu-system-i386 \
+        -m 64M \
+        -kernel  bzImage \
+        -hda  rootfs.ext2 \
+        -append "root=/dev/sda console=ttyS0" \
+        -enable-kvm \
+        -nographic \
+        -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:01 \
+        -net nic,vlan=1,model=e1000,macaddr=52:54:00:12:34:11 \
+        -net vde,vlan=1,sock=/tmp/lan1.ctl[] \
+        -net nic,vlan=2,model=e1000,macaddr=52:54:00:12:34:12 \
+        -net vde,vlan=2,sock=/tmp/lan2.ctl[] \
+        -net nic,vlan=3,model=e1000,macaddr=52:54:00:12:34:13 \
+        -net vde,vlan=3,sock=/tmp/lan3.ctl[] \
+        -net nic,vlan=4,model=e1000,macaddr=52:54:00:12:34:14 \
+        -net vde,vlan=4,sock=/tmp/lan4.ctl[]
+          </screen>
+          对比上文中的<emphasis>boot.sh</emphasis>，我们首先为每个<emphasis>lan口</emphasis>配置了
+          独立的<emphasis>vlan ID</emphasis>，同时每个<emphasis>lan口</emphasis>会创建一个<emphasis>socket</emphasis>
+          文件来作为连接的<quote>线</quote>，OK，这样，<quote>老章</quote>终于可以干点活了。
+        </para>
+      </section>
+      <section>
+        <title>添加<emphasis>bridge</emphasis>脚本</title>
+        <para>
+          我们的嵌入式系统显然不会自动创建桥接接口的，所以需要我们手动添加了，那么看脚本吧：
+          <screen>
+<prompt># </prompt><userinput>cat /usr/lib/scripts/bridge</userinput>
+
+#!/bin/sh
+
+BRNAME=br0
+BINDIFS="eth1 eth2 eth3 eth4"
+
+bridge_start() {
+        echo "bridge_start..."
+        brctl addbr $BRNAME
+        for I in $BINDIFS
+        do
+                if [ -d /sys/class/net/$I ] ; then
+                        brctl addif $BRNAME $I
+                        ifconfig $I 0.0.0.0 up
+                fi
+        done
+
+}
+
+bridge_stop() {
+        echo "bridge_stop..."
+        ifconfig $BRNAME down
+        brctl delbr $BRNAME
+}
+
+# add bridge iface before bring up network
+if [ ! -x /usr/sbin/brctl ] ; then
+        exit 0
+fi
+
+if [ $IFACE != $BRNAME ] ; then
+        exit 0
+fi
+
+case $MODE in
+        start)
+        bridge_start
+        ;;
+        stop)
+        bridge_stop
+        ;;
+        *)
+        exit 0
+        ;;
+esac
+          </screen>
+          这里，我把<emphasis>bridge</emphasis>脚本放到了<filename>/usr/lib/scripts</filename>目录里，
+          这样方便管理，那么这个脚本该怎么用呢？
+          <screen>
+<prompt># </prompt><userinput>ls -la /etc/network/if-pre-up.d/bridge</userinput>
+lrwxrwxrwx    1 root     root            23 Feb 12 13:30 /etc/network/if-pre-up.d/bridge -> /usr/lib/scripts/bridge
+<prompt># </prompt><userinput>ls -la /etc/network/if-post-down.d/bridge</userinput>
+lrwxrwxrwx    1 root     root            23 Feb 12 13:31 /etc/network/if-post-down.d/bridge -> /usr/lib/scripts/bridge
+          </screen>
+          看，我们做了个符号连接，他就是用到这里！
+        </para>
+      </section>
+      <section>
+        <title>配置<emphasis>interfaces</emphasis></title>
+        <para>
+          仅仅创建了<emphasis>bridge</emphasis>脚本还不够，我们还需要修改<filename>/etc/network/interfaces</filename>
+          文件来触发他执行：
+          <screen>
+<prompt># </prompt><userinput>cat /etc/network/interfaces</userinput>
+
+# Configure Loopback
+auto lo
+iface lo inet loopback
+
+auto br0
+iface br0 inet static
+address 192.168.1.1
+netmask 255.255.255.0
+broadcast 192.168.1.255
+          </screen>
+          这里桥接我们设置成静态的啦，原因你懂得。
+        </para>
+      </section>
+      <section>
+        <title>配置<emphasis>dnsmasq</emphasis></title>
+        <para>
+          桥接接口总算是设置好了，可是，客户如何从路由器<emphasis>lan侧</emphasis>获取<emphasis>IP</emphasis>
+          呢？显然，还是需要<quote>自己动手，丰衣足食</quote>了，那么就让<emphasis>dnsmasq</emphasis>登场
+          了。
+          <screen>
+<prompt># </prompt><userinput>cat /etc/dnsmasq.conf</userinput>
+
+conf-file=/etc/dnsmasq.conf
+dhcp-authoritative
+domain-needed
+localise-queries
+read-ethers
+bogus-priv
+expand-hosts
+domain=lan
+server=/lan/
+dhcp-leasefile=/tmp/dhcp.leases
+resolv-file=/tmp/resolv.conf.auto
+stop-dns-rebind
+rebind-localhost-ok
+
+
+dhcp-range=lan,192.168.1.100,192.168.1.249,255.255.255.0,12h
+no-dhcp-interface=eth1 eth2
+
+address=/buildroot.lan/192.168.1.1
+ptr-record=1.1.168.192.in-addr.arpa,buildroot.lan
+          </screen>
+          唉，有了配置文件<emphasis>dnsmasq</emphasis>也没有长腿自己跑，我们还要给他添加一个自动运行的
+          脚本：
+          <screen>
+<prompt># </prompt><userinput>cat /etc/init.d/S50dnsmasq</userinput>
+
+#!/bin/sh
+#
+# Start the dnsmasq....
+#
+
+case "$1" in
+  start)
+        echo "Starting dnsmasq..."
+        /usr/sbin/dnsmasq -C /etc/dnsmasq.conf
+        ;;
+  stop)
+        echo -n "Stopping dnsmasq..."
+        PID=`cat /var/run/dnsmasq.pid`
+        kill -2 $PID
+        rm /var/run/dnsmasq.pid
+        ;;
+  restart|reload)
+        "$0" stop
+        "$0" start
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+exit $?
+          </screen>
+          最好要强调的是，一定要给他加上<emphasis>可执行权限</emphasis>哦！
+        </para>
+      </section>
+    </section>
+    <section>
+      <title>功能验证</title>
+      <para>
+        好了，一个崭新的<quote>动物人</quote>终于诞生了，接下来就该是<quote>是骡子是马，牵出去溜溜了！</quote>
+        显然，单是一个<quote>老章</quote>恐怕看不出来效果了，那么就让<emphasis>openwrt</emphasis>友情出演！
+        <screen>
+<prompt>liunx@ubuntu:~/Work/OpenWrt/work/x86$ </prompt><userinput>cat boot2.sh</userinput>
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
+
+/usr/local/bin/qemu-system-i386 \
+        -m 64M \
+        -kernel openwrt-x86-generic-vmlinuz \
+        -hda openwrt-x86-generic-rootfs-ext4.img \
+        -append "root=/dev/sda console=ttyS0" \
+        -enable-kvm \
+        -nographic \
+        -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:02 \
+<emphasis>
+        -net vde,vlan=0,sock=/tmp/lan1.ctl
+</emphasis>
+        </screen>
+        重点就在这里，通过<quote>老章</quote>的<quote>线</quote>连接上去！接下来<command>./boot2.sh</command>
+        然后从<quote>老章</quote>获取<emphasis>IP</emphasis>看看！
+        <screen>
+<prompt>root@OpenWrt:/# </prompt><userinput>udhcpc -i eth0</userinput>
+udhcpc (v1.19.4) started
+[   35.887280] 8021q: adding VLAN 0 to HW filter on device eth0
+Sending discover...
+[   37.891026] e1000: eth0 NIC Link is Up 1000 Mbps Full Duplex, Flow Control: RX
+Sending discover...
+Sending select for 192.168.1.166...
+Lease of 192.168.1.166 obtained, lease time 43200
+udhcpc: ifconfig eth0 192.168.1.166 netmask 255.255.255.0 broadcast 192.168.1.255
+udhcpc: setting default routers: 192.168.1.1
+        </screen>
+        哈，成功了！
       </para>
     </section>
   </section>
