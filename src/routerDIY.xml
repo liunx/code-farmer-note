@@ -4,6 +4,7 @@
 <!ENTITY chap2 SYSTEM "chap2.xml">
 <!ENTITY chap3 SYSTEM "chap3.xml">
 <!ENTITY chap4 SYSTEM "chap4.xml">
+<!ENTITY chap5 SYSTEM "chap5.xml">
 <!ENTITY appa SYSTEM "appa.xml">
 ]>
 <book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
@@ -30,6 +31,7 @@
   &chap2;
   &chap3;
   &chap4;
+  &chap5;
   &appa;
   <index>参考索引</index>
 </book>
