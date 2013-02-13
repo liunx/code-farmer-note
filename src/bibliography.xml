@@ -1,0 +1,8 @@
+<bibliography xml:id="bibliography" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
+  xmlns:xlink='http://www.w3.org/1999/xlink'>
+  <title>参考文献</title>
+  <para>
+    <ulink url="http://en.gentoo-wiki.com/wiki/Iptables_for_newbies">Iptables_for_newbies</ulink> -- 来自
+    <emphasis>gentoo</emphasis>的<emphasis>wiki</emphasis>教新手配置防火墙，简单直白易懂，实战性很强。
+  </para>
+</bibliography>
