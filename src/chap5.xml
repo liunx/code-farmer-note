@@ -15,10 +15,566 @@
   <section>
     <title>准备工作</title>
     <para>
-      有道是<quote>磨刀不误砍材工</quote>，在开始搭建防火墙之前，我们需要做一些准备工作。
+      有道是<quote>磨刀不误砍材工</quote>，在开始搭建防火墙之前，我们需要做一些准备工作。防火墙的搭建
+      需要两个部分进行配置：
+      <orderedlist>
+        <listitem>NetFilter</listitem>
+        <listitem>iptables</listitem>
+      </orderedlist>
+      简单的描述一下二者的关系：<emphasis>NetFilter</emphasis>是用来执行防火墙规则的，<emphasis>iptables</emphasis>
+      则是用来定义防火墙规则的。首先<command>make menuconfig</command>，进入
+          <menuchoice>
+            <guimenu>Package Selection for the target</guimenu>
+            <guisubmenu>Networking applications</guisubmenu>
+        </menuchoice>
+        勾选<quote>iptables</quote>，保存退出。然后<command>make linux-menuconfig</command>：
+        <screen>
+[*] Networking support  ---&gt;
+    Networking options  ---&gt;
+        [*] Network packet filtering framework (Netfilter)  ---&gt;
+            [*]   Advanced netfilter configuration
+        Core Netfilter Configuration  ---&gt;
+            [*] Netfilter connection tracking support
+            [*]   "NFLOG" target support
+            [*]   "conntrack" connection tracking match support
+            [*]   "state" match support
+        IP: Netfilter Configuration  ---&gt;
+            [*] IPv4 connection tracking support (required for NAT)      
+            [*]   proc/sysctl compatibility with old connection tracking 
+            [*] IP tables support (required for filtering/masq/NAT)      
+            [*]   Packet filtering                                       
+            [*]     REJECT target support                                
+            [*]   Full NAT                                               
+            [*]     MASQUERADE target support                            
+            [*]     NETMAP target support                                
+            [*]     REDIRECT target support                              
+            [*]     Basic SNMP-ALG support                               
+            [*]   Packet mangling                                        
+        </screen>
+        按照以上配置选择，最后保存退出并<command>make</command>。
     </para>
   </section>
   <section>
     <title>基本防火墙</title>
+    <para>
+      好了，准备工作完成了，下面开始搭建防火墙了！
+    </para>
+    <section>
+      <title>目标描述</title>
+      <para>
+        下面请看我们的设计图：
+      <imageobject>
+        <imagedata align="right" width="6in" format="PNG"
+          fileref="../images/simple-firewall.png"/>
+      </imageobject>
+      黄色的部分是通过<emphasis>vde_switch</emphasis>和<emphasis>slirpvde</emphasis>模拟的交换机网络，
+      这里<emphasis>slirpvde</emphasis>起到分配<emphasis>IP地址</emphasis>的作用。红色部分就是我们的
+      男主角<quote>老章</quote>了，蓝色部分就是由<emphasis>openwrt</emphasis>友情出演的<emphasis>wan</emphasis>
+      侧主机和<emphasis>lan</emphasis>侧主机。
+      </para>
+      <para>
+        好，所有演员就位了，该是介绍剧情的时候了，我们的剧情很简单，那就是
+      <orderedlist>
+        <listitem>实现对<emphasis>lan/wan</emphasis>侧PC的访问的控制</listitem>
+        <listitem>实现<emphasis>lan/wan</emphasis>侧PC的互访</listitem>
+      </orderedlist>
+      </para>
+    </section>
+    <section>
+      <title>创建交换机网络</title>
+      <screen>
+<prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images$ </prompt><userinput>cat custom/switch.sh</userinput>
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
+
+echo "begin switch..."
+vde_switch --daemon --sock /tmp/switch --mgmt /tmp/switch.mgmt
+slirpvde -d -s /tmp/switch -dhcp
+echo "OK"
+      </screen>
+      <para>
+        这个脚本很简单，我们就不做介绍了，唯一需要强调的是<quote>--mgmt /tmp/switch.mgmt</quote>，
+        这个选项很重要哦，这里我们暂且留个悬念吧。
+      </para>
+    </section>
+    <section>
+      <title>创建<emphasis>wan侧PC</emphasis></title>
+      <screen>
+<prompt>liunx@ubuntu:~/Work/OpenWrt/work/x86$ </prompt><userinput>cat wanPC.sh</userinput>
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
+
+/usr/local/bin/qemu-system-i386 \
+        -m 64M \
+        -kernel openwrt-x86-generic-vmlinuz \
+        -hda openwrt-x86-generic-rootfs-ext4.img \
+        -append "root=/dev/sda console=ttyS0" \
+        -enable-kvm \
+        -daemonize \
+        -vnc :53 \
+        -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:41 \
+        -net vde,sock=/tmp/switch
+      </screen>
+      <para>
+        好，运行这个脚本，让我们看看我们的模拟交换机网络是否工作正常：
+        <screen>
+<prompt>liunx@ubuntu:~/Work/OpenWrt/work/x86$ </prompt><userinput>./wanPC.sh</userinput>
+        </screen>
+        哎呀，啥输出都没有，但其实我们的<emphasis>qemu</emphasis>已经在后台悄悄地运行了！
+        这里我们打开<emphasis>vnc</emphasis>来看看究竟。
+        <screen>
+<prompt>liunx@ubuntu:~/Work/DocBook/Work/code-farmer-note$ </prompt><userinput>vncviewer localhost:5953</userinput>
+
+VNC Viewer Free Edition 4.1.1 for X - built Feb  5 2012 20:01:21
+Copyright (C) 2002-2005 RealVNC Ltd.
+See http://www.realvnc.com for information on VNC.
+
+Fri Feb 15 13:22:58 2013
+ CConn:       connected to host localhost port 5953
+ CConnection: Server supports RFB protocol version 3.8
+ CConnection: Using RFB protocol version 3.8
+ TXImage:     Using default colormap and visual, TrueColor, depth 24.
+ CConn:       Using pixel format depth 6 (8bpp) rgb222
+ CConn:       Using ZRLE encoding
+
+Fri Feb 15 13:23:12 2013
+ CConn:       Throughput 6666 kbit/s - changing to hextile encoding
+ CConn:       Throughput 6666 kbit/s - changing to full colour
+ CConn:       Using pixel format depth 24 (32bpp) little-endian rgb888
+ CConn:       Using hextile encoding
+        </screen>
+      <imageobject>
+        <imagedata align="right" width="6in" format="PNG"
+          fileref="../images/vnc-wanPC.png"/>
+      </imageobject>
+      <screen>
+<prompt>root@OpenWrt:/# </prompt><userinput>udhcpc -i eth0</userinput>
+udhcpc (v1.19.4) started
+Sending discover...
+Sending select for 10.0.2.15...
+Lease of 10.0.2.15 obtained, lease time 86400
+udhcpc: ifconfig eth0 10.0.2.15 netmask 255.255.255.0 broadcast +
+udhcpc: setting default routers: 10.0.2.2
+root@OpenWrt:/#
+      </screen>
+      OK，工作正常！
+      </para>
+    </section>
+    <section>
+      <title>创建路由器</title>
+      <screen>
+<prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images$ </prompt><userinput>cat router.sh</userinput>
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
+
+/usr/local/bin/qemu-system-i386 \
+        -m 64M \
+        -kernel  bzImage \
+        -hda  rootfs.ext2 \
+        -append "root=/dev/sda console=ttyS0" \
+        -enable-kvm \
+        -daemonize \
+        -vnc :51 \
+        -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:01 \
+        -net vde,vlan=0,sock=/tmp/switch \
+        -net nic,vlan=1,model=e1000,macaddr=52:54:00:12:34:11 \
+        -net vde,vlan=1,sock=/tmp/lan1.ctl[] \
+        -net nic,vlan=2,model=e1000,macaddr=52:54:00:12:34:12 \
+        -net vde,vlan=2,sock=/tmp/lan2.ctl[] \
+        -net nic,vlan=3,model=e1000,macaddr=52:54:00:12:34:13 \
+        -net vde,vlan=3,sock=/tmp/lan3.ctl[] \
+        -net nic,vlan=4,model=e1000,macaddr=52:54:00:12:34:14 \
+        -net vde,vlan=4,sock=/tmp/lan4.ctl[]
+      </screen>
+      <para>
+        这里我们定义了<emphasis>eth0</emphasis>为外网接口，验证方法同上。
+      </para>
+    </section>
+    <section>
+      <title>创建<emphasis>lan侧PC</emphasis></title>
+      <para>
+        好了，路由器有了，我们接下来再添加一个PC连接到路由器的<emphasis>lan侧</emphasis>。
+        <screen>
+<prompt>liunx@ubuntu:~/Work/OpenWrt/work/x86$ </prompt><userinput>cat lanPC.sh</userinput>
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
+
+/usr/local/bin/qemu-system-i386 \
+        -m 64M \
+        -kernel openwrt-x86-generic-vmlinuz \
+        -hda openwrt-x86-generic-rootfs-ext4.img \
+        -append "root=/dev/sda console=ttyS0" \
+        -enable-kvm \
+        -daemonize \
+        -vnc :52 \
+        -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:31 \
+        -net vde,vlan=0,sock=/tmp/lan1.ctl
+        </screen>
+        这里，我们选择路由器中任意一个<emphasis>lanx.ctl</emphasis>接口就可以了。
+      </para>
+      <para>
+        接下来，我们验证一下是否能从路由器获取<emphasis>IP地址</emphasis>：
+        <screen>
+<prompt>root@OpenWrt:/# </prompt><userinput>udhcpc -i eth0</userinput>
+udhcpc (v1.19.4) started
+Sending discover...
+Sending select for 192.168.1.213...
+Lease of 192.168.1.213 obtained, lease time 43200
+udhcpc: ifconfig eth0 192.168.1.213 netmask 255.255.255.0 broadcast 192.168.1.255
+udhcpc: setting default routers: 192.168.1.1
+        </screen>
+        OK，没问题！
+      </para>
+    </section>
+    <section>
+      <title>创建防火墙规则</title>
+      <para>
+        下面到了关键的环节，我们要创建防火墙规则了。
+      </para>
+      <section>
+        <title>接口</title>
+        <para>
+          <screen>
+# Private interface
+IF_PRV=br0
+IP_PRV=192.168.1.1
+NET_PRV=192.168.1.0/24
+
+# Public interface
+IF_PUB=eth0
+IP_PUB=10.0.0.1
+NET_PUB=10.0.0.0/24
+
+# Others
+ANYWHERE=0.0.0.0/0
+          </screen>
+          这里我们需要区分的是公共接口和私有接口，公共接口就是<emphasis>eth0</emphasis>，
+          私有接口就是我们的<emphasis>br0</emphasis>了。公共接口和外部交换机相连，而私有接口
+          则和<emphasis>lan侧</emphasis>的主机相连。
+        </para>
+      </section>
+      <section>
+        <title>设置默认表策略</title>
+        <screen>
+<prompt># </prompt><userinput>iptables -nvL</userinput>
+Chain INPUT (policy ACCEPT 388 packets, 27432 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+
+Chain OUTPUT (policy ACCEPT 386 packets, 26280 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+        </screen>
+        <para>
+        路由表默认的策略是<emphasis>ACCEPT</emphasis>，即网络包没有匹配任何规则时，默认接受所有的网络包，
+        </para>
+      <imageobject>
+        <imagedata align="right" width="6in" format="PNG"
+          fileref="../images/simple-firewall2.png"/>
+      </imageobject>
+        <para>
+        这样的路由器简直就成了筛子了，显然不是我们想要的结果，这里我们设定一个严格而保守的策略，默认不
+        接受任何包。
+        </para>
+        <screen>
+<prompt># </prompt><userinput>iptables -P INPUT DROP</userinput>
+<prompt># </prompt><userinput>iptables -P OUTPUT DROP</userinput>
+<prompt># </prompt><userinput>iptables -P FORWARD DROP</userinput>
+<prompt># </prompt><userinput>iptables -nvL</userinput>
+Chain INPUT (policy DROP 1 packets, 68 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+
+Chain FORWARD (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+
+Chain OUTPUT (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+        </screen>
+        <para>
+          这时我们再次进行<emphasis>PING</emphasis>测试：
+          <screen>
+<prompt># </prompt><userinput>ping 10.0.2.15</userinput>
+PING 10.0.2.15 (10.0.2.15): 56 data bytes
+ping: sendto: Operation not permitted
+          </screen>
+          <screen>
+<prompt>root@OpenWrt:/# </prompt><userinput>ping 10.0.2.16</userinput>
+PING 10.0.2.16 (10.0.2.16): 56 data bytes
+^C
+--- 10.0.2.16 ping statistics ---
+103 packets transmitted, 0 packets received, 100% packet loss
+          </screen>
+          <screen>
+<prompt>root@OpenWrt:/# </prompt><userinput>ping 192.168.1.1</userinput>
+PING 192.168.1.1 (192.168.1.1): 56 data bytes
+^C
+--- 192.168.1.1 ping statistics ---
+2 packets transmitted, 0 packets received, 100% packet loss
+          </screen>
+          不行了哟！
+        </para>
+        <para>
+          在开始添加规则前，我们也要做一个清理工作，清除以前的规则：
+          <screen>
+<prompt># </prompt><userinput>iptables -F -t filter</userinput>
+<prompt># </prompt><userinput>iptables -F -t nat</userinput>
+<prompt># </prompt><userinput>iptables -F -t mangle</userinput>
+<prompt># </prompt><userinput>iptables -X</userinput>
+          </screen>
+        </para>
+      </section>
+      <section>
+        <title>开启路由功能</title>
+        <screen>
+<prompt># </prompt><userinput>echo 1 > /proc/sys/net/ipv4/ip_forward</userinput>
+        </screen>
+        <para>
+          首先，让我们打开内核的数据转发功能。接下来设置转发规则：
+        </para>
+        <screen>
+<prompt># </prompt><userinput>iptables -A FORWARD -i $IF_PUB -o $IF_PRV -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT</userinput>
+<prompt># </prompt><userinput>iptables -A FORWARD -i $IF_PRV -o $IF_PUB -j ACCEPT</userinput>
+        </screen>
+        <para>
+          从转发规则可以看出，我们限制外部的数据转发，无条件的接受内部网络对外部的数据转发。
+        </para>
+      </section>
+      <section>
+        <title>信任内部网络</title>
+        <para>
+          由于我们严格的<emphasis>DROP</emphasis>策略，默认情况下，我们连内部回路都不能用了：
+          <screen>
+<prompt># </prompt><userinput>ifconfig lo</userinput>
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          UP LOOPBACK RUNNING  MTU:16436  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+<prompt># </prompt><userinput>ping 127.0.0.1</userinput>
+PING 127.0.0.1 (127.0.0.1): 56 data bytes
+ping: sendto: Operation not permitted
+          </screen>
+          我们不信任别人，至少要信任自己吧，是不是？
+        </para>
+        <screen>
+<prompt># </prompt><userinput>iptables -A INPUT -i lo -j ACCEPT</userinput>
+<prompt># </prompt><userinput>iptables -A OUTPUT -o lo -j ACCEPT</userinput>       
+<prompt># </prompt><userinput>ping 127.0.0.1</userinput>
+PING 127.0.0.1 (127.0.0.1): 56 data bytes
+64 bytes from 127.0.0.1: seq=0 ttl=64 time=0.105 ms
+64 bytes from 127.0.0.1: seq=1 ttl=64 time=0.160 ms
+64 bytes from 127.0.0.1: seq=2 ttl=64 time=0.164 ms
+c
+--- 127.0.0.1 ping statistics ---
+3 packets transmitted, 3 packets received, 0% packet loss
+round-trip min/avg/max = 0.105/0.143/0.164 ms
+        </screen>
+        <para>
+          除此以外，我们还要信任自己的私有网络：
+        </para>
+        <screen>
+<prompt># </prompt><userinput>iptables -A INPUT -i $IF_PRV -s $NET_PRV -j ACCEPT</userinput>
+<prompt># </prompt><userinput>iptables -A OUTPUT -o $IF_PRV -d $NET_PRV -j ACCEPT</userinput>         
+        </screen>
+        <para>
+          接下来，我们要为私有网络添加路由规则，已完成我们的第二个目标，即私有网络能够访问
+          外部网络。
+        </para>
+        <screen>
+<prompt># </prompt><userinput>iptables -t nat -A POSTROUTING -s $NET_PRV -o $IF_PUB -j SNAT --to $IP_PUB</userinput>
+        </screen>
+        <para>
+          这里，我们需要网络地址<emphasis>NAT</emphasis>，并且我们的私有地址是无法被外部网络
+          认证的，因此我们需要把私有地址转换成公网地址，这样才能与外部网络传递数据，所以这种
+          对源地址做转换的模式叫源地址转换<emphasis>SNAT</emphasis>。
+        </para>
+      </section>
+      <section>
+        <title>开启服务</title>
+        <para>
+          我们的路由器还需要提供一些基本的服务，比如<emphasis>DHCP</emphasis>服务，同时为了方便
+          调试，我们还要提供<emphasis>ICMP</emphasis>服务，所以我们还需要添加规则：
+          <screen>
+<prompt># </prompt><userinput>iptables -A INPUT -p icmp -j ACCEPT</userinput>
+<prompt># </prompt><userinput>iptables -A INPUT -p udp --dport 67:68 --sport 67:68 -j ACCEPT</userinput>
+          </screen>
+        </para>
+      </section>
+      <section>
+        <title>总结</title>
+        <para>
+          好了，我们的简单防火墙已出具成效了，下面我们要把他们写成自动运行脚本，以方便使用。
+        </para>
+        <screen>
+<prompt># </prompt><userinput>cat /etc/init.d/S60firewall</userinput>
+#!/bin/sh
+# Copyright (c) 2005
+#
+# Author: David Mair
+#
+# /etc/init.d/firewall
+#
+# Moditfied by Liunx
+
+
+##############################################################################
+# DEFAULT POLICY
+SetDefaultPolicy() {
+	# Drop everything
+	iptables -P INPUT DROP
+	iptables -P OUTPUT DROP
+	iptables -P FORWARD DROP
+}
+
+
+##############################################################################
+# FLUSH TABLES
+FlushTables() {
+	iptables -F -t nat
+	iptables -F -t mangle
+	iptables -F -t filter
+	iptables -X
+}
+
+
+##############################################################################
+# ROUTING
+EnableRouting() {
+	echo 1 &gt; /proc/sys/net/ipv4/ip_forward
+}
+
+DisableRouting() {
+	echo 0 &gt; /proc/sys/net/ipv4/ip_forward
+}
+
+
+##############################################################################
+# FORWARDING
+SetForwardingRules() {
+	iptables -A FORWARD -i $IF_PUB -o $IF_PRV -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+	iptables -A FORWARD -i $IF_PRV -o $IF_PUB -j ACCEPT
+}
+
+
+##############################################################################
+# LOOPBACK
+SetLoopbackRules() {
+	# Allow everything
+	iptables -A INPUT -i lo -j ACCEPT
+	iptables -A OUTPUT -o lo -j ACCEPT
+}
+
+
+##############################################################################
+# PRIVATE INTERFACES
+SetPrivateInterfaceRules() {
+	# Allow everything
+	iptables -A INPUT -i $IF_PRV -s $NET_PRV -j ACCEPT
+	iptables -A OUTPUT -o $IF_PRV -d $NET_PRV -j ACCEPT
+}
+
+
+#############################################################################
+# PUBLIC INTERFACES
+SetPublicInterfaceRules() {
+	iptables -A INPUT -i $IF_PUB -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+	iptables -A OUTPUT -o $IF_PUB -j ACCEPT
+}
+
+
+##############################################################################
+# SOURCE NAT
+EnableSourceNAT() {
+	# Then source NAT everything else
+	iptables -t nat -A POSTROUTING -s $NET_PRV -o $IF_PUB -j SNAT --to $IP_PUB
+}
+
+
+# Various ICMP
+SetICMP_Open() {
+	iptables -A INPUT -p icmp -j ACCEPT
+}
+
+# enable dhcp for private network
+SetDHCP_Open() {
+	iptables -A INPUT -p udp --dport 67:68 --sport 67:68 -j ACCEPT
+}
+
+
+# Drop them all
+SetDropRules() {
+	# Reset tcp connection attempts on all other ports
+	# This is the standard TCP behaviour for a closed port. Reading
+	# suggests there is no value in stealthing ports and since some are
+	# open on this host it doesn't seem to matter. Therefore, let's be a 
+	# good TCP citizen
+	iptables -A INPUT -p tcp -j REJECT --reject-with tcp-reset
+}
+
+
+##############################################################################
+# SCRIPT ENTRY POINT
+
+echo -n "Firewall configuration..."
+echo $1
+
+##############################################################################
+# ENVIRONMENT
+
+# Private interface
+IF_PRV=br0
+IP_PRV=192.168.1.1
+NET_PRV=192.168.1.0/24
+
+# Public interface
+IF_PUB=eth0
+IP_PUB=10.0.2.16
+NET_PUB=10.0.2.0/24
+
+# Others
+ANYWHERE=0.0.0.0/0
+
+##############################################################################
+# COMMAND LINE
+
+case "$1" in
+	start)
+		SetDefaultPolicy
+		FlushTables
+		EnableRouting
+		SetForwardingRules
+		SetLoopbackRules
+		SetPrivateInterfaceRules
+		SetPublicInterfaceRules
+		EnableSourceNAT
+
+		SetDHCP_Open
+		SetICMP_Open
+		SetDropRules
+		;;
+
+	stop)
+		SetDefaultPolicy
+		FlushTables
+
+		SetPrivateInterfaceRules
+		SetPublicInterfaceRules
+		;;
+
+	restart)
+		$0 stop
+		$0 start
+		;;
+
+	*)
+		;;
+esac
+        </screen>
+      </section>
+    </section>
   </section>
 </chapter>
