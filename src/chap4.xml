@@ -1,6 +1,6 @@
 <chapter xml:id="chapter4" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
   xmlns:xlink='http://www.w3.org/1999/xlink'>
-  <title>第四章：设备集成</title>
+  <title>设备集成</title>
   <para>
     前面，我们介绍了如何搭建运行环境，网络环境，还有运行嵌入式系统，但是一切的一切也只是万里长征第一步，接下来我们就要到设计和集成的阶段了。
   </para>

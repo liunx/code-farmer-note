@@ -1,6 +1,6 @@
 <chapter xml:id="chapter3" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
   xmlns:xlink='http://www.w3.org/1999/xlink'>
-  <title>第三章：搭建嵌入式系统</title>
+  <title>搭建嵌入式系统</title>
   <para>
     <emphasis>嵌入式系统</emphasis>是一个很广泛的概念，简单的说，<emphasis>嵌入式系统</emphasis>是一个“小”系统，比如说手机，车载设备等，这里我们构建的<emphasis>嵌入式</emphasis>系统就是具有这个特点，比如说他的体积很小，启动速度快，功能单一，相对于PC系统来说，更加方便我们测试和实验，而且内存占用少，所以配置相对低的电脑也可以轻松运行，可以说物美价廉。
   </para>

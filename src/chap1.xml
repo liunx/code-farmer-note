@@ -1,6 +1,6 @@
 <chapter xml:id="chapter1" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
   xmlns:xlink='http://www.w3.org/1999/xlink'>
-  <title>第一章：搭建运行环境</title>
+  <title>搭建运行环境</title>
   <para>
     我们搭建的路由器是基于<emphasis>虚拟机</emphasis>的，所以这里我要介绍一下我们的运行环境，运行环境我们选用<emphasis>xubuntu12.10</emphasis>，<emphasis>xubuntu12.10</emphasis>选用<emphasis>xfce</emphasis>作为用户界面，特点是运行流畅，内存占用少，简洁高效，是您居家使用利器！虚拟机我们选用<emphasis>qemu</emphasis>，<emphasis>qemu</emphasis>性能稳定，运行效率很高，配合<emphasis>linux</emphasis>下<emphasis>kvm</emphasis>技术，运行效率非常高，而且支持终端下显示，这样不仅节约内存使用，而且方便我们使用tmux终端分屏工具进行管理，非常放便，最后，guest系统是谁呢？有人说，可以用任何一个linux版本啊，但是我觉得也不方便，首先linux发行版相对尺寸较大，内存占用多，硬盘也要占用很大的空间，启动也比较慢，并且如果我们想要修改其中的源码的话，也不是很方便，而且里面好多的东西也和我们的实验没有太多帮助，也不能对其进行高度的定制，所以不是一个好选择，那么有没有像嵌入式系统那样体积小，高度可定制，速度快，使用方便的，答案就是<emphasis>buildroot</emphasis>和<emphasis>openwrt</emphasis>的x86版本。gui管理前端我们选用<emphasis>virtualbricks</emphasis>，其可以创建网络系统拓扑图，管理配置虚拟系统等。
   </para>

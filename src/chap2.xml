@@ -1,6 +1,6 @@
 <chapter xml:id="chapter2" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
   xmlns:xlink='http://www.w3.org/1999/xlink'>
-  <title>第二章：搭建网络环境</title>
+  <title>搭建网络环境</title>
   <para>
     网络环境之与网络设备就像是水和鱼，谁都离不开谁的，所以我们只是做好了设备，却没有一个可靠的运行环境，那么无论设备再好，也无法发挥他应有的作用。
   </para>

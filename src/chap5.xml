@@ -1,6 +1,6 @@
 <chapter xml:id="chapter5" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
   xmlns:xlink='http://www.w3.org/1999/xlink'>
-  <title>第五章：防火墙篇</title>
+  <title>防火墙篇</title>
   <para>
     防火墙的基本作用从他的名字就可以看出来，<quote>墙</quote>的作用不言而喻，大家都明白，就是防止别人进入，比如说世界八大奇迹之一的长城，就是一堵大墙，当然了，这是一个有形的<quote>墙</quote>，而我们讨论的是则是无形的<quote>墙</quote>，其实找个更直白的例子就是天朝的<quote>大防火墙</quote>，如果你想XXX的话，你就感受到他的存在了，剩下的你懂得。
   </para>
