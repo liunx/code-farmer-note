@@ -5,6 +5,7 @@
 <!ENTITY chap3 SYSTEM "chap3.xml">
 <!ENTITY chap4 SYSTEM "chap4.xml">
 <!ENTITY chap5 SYSTEM "chap5.xml">
+<!ENTITY chap6 SYSTEM "chap6.xml">
 <!ENTITY bibliography SYSTEM "bibliography.xml">
 <!ENTITY appa SYSTEM "appa.xml">
 ]>
@@ -33,6 +34,7 @@
   &chap3;
   &chap4;
   &chap5;
+  &chap6;
   &appa;
   &bibliography;
 </book>
