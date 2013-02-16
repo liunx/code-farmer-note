@@ -2,17 +2,10 @@
   xmlns:xlink='http://www.w3.org/1999/xlink'>
   <title>第二章：搭建网络环境</title>
   <para>
-    网络环境之与网络设备就像是水和鱼，谁都离不开谁的，所以我们只是做好了设备，却没有一个可靠的
-    运行环境，那么无论设备再好，也无法发挥他应有的作用。
+    网络环境之与网络设备就像是水和鱼，谁都离不开谁的，所以我们只是做好了设备，却没有一个可靠的运行环境，那么无论设备再好，也无法发挥他应有的作用。
   </para>
   <para>
-    搭建网络环境也有”内“、”外“之分，“内”指的是<emphasis>主机网络</emphasis>，是指我们的网络环境
-    运行在独立的PC主机上，无需外部设备的参与，优点是显而易见的，就是网络环境本身可以自治，不需要
-    购买其他网络设备，尤其当你处于一个动态IP或者无法上网的情况下，内网环境完全可以由你自己定制，
-    而不受外部的干预，缺点就是<emphasis>单通</emphasis>别的主机想要访问你的内部网络时，主机网络
-    就无能为力了。“外”指的是桥接网络，特点是<emphasis>双通</emphasis>，实现主机之间的互访，但是
-    需要外部的网络设备进行连接，由于受制于外部网络，比如IP分配策略等的限制，使得我们的可定制性
-    下降了。显然，没有任何一种办法是完美的，所以我们要“内外”并用，发挥出他们的功力来。
+    搭建网络环境也有”内“、”外“之分，“内”指的是<emphasis>主机网络</emphasis>，是指我们的网络环境运行在独立的PC主机上，无需外部设备的参与，优点是显而易见的，就是网络环境本身可以自治，不需要购买其他网络设备，尤其当你处于一个动态IP或者无法上网的情况下，内网环境完全可以由你自己定制，而不受外部的干预，缺点就是<emphasis>单通</emphasis>别的主机想要访问你的内部网络时，主机网络就无能为力了。“外”指的是桥接网络，特点是<emphasis>双通</emphasis>，实现主机之间的互访，但是需要外部的网络设备进行连接，由于受制于外部网络，比如IP分配策略等的限制，使得我们的可定制性下降了。显然，没有任何一种办法是完美的，所以我们要“内外”并用，发挥出他们的功力来。
   </para>
   <section>
     <title>搭建主机网络</title>
@@ -26,8 +19,7 @@
 virt-manager 已经是最新的版本了。
 升级了 0 个软件包，新安装了 0 个软件包， 要卸载 0 个软件包，有 150 个软件包未被升级。
       </screen>
-      如果没有安装<emphasis>virt-manager</emphasis>，系统会下载安装的。如果安装成功的话，接下来
-      我们开始创建<emphasis>主机网络</emphasis>。启动<emphasis>virt-manager</emphasis>：
+      如果没有安装<emphasis>virt-manager</emphasis>，系统会下载安装的。如果安装成功的话，接下来我们开始创建<emphasis>主机网络</emphasis>。启动<emphasis>virt-manager</emphasis>：
     </para>
     <menuchoice>
       <guimenu>应用程序菜单</guimenu>
@@ -42,9 +34,7 @@ virt-manager 已经是最新的版本了。
       <guimenuitem>Connection Details</guimenuitem>
     </menuchoice>
     <para>
-      选择“虚拟网络”标签页，这时可以看到有一个<emphasis>default</emphasis>的虚拟网络
-      <emphasis>virbr0</emphasis>，并且自动启动的，为了验证虚拟网络是否启用，我们可以通过终端
-      看到结果：
+      选择“虚拟网络”标签页，这时可以看到有一个<emphasis>default</emphasis>的虚拟网络<emphasis>virbr0</emphasis>，并且自动启动的，为了验证虚拟网络是否启用，我们可以通过终端看到结果：
       <screen>
 <prompt>liunx@ubuntu:~/Work/DocBook/Work/code-farmer-note$ </prompt><userinput>ifconfig</userinput>
 eth0      Link encap:以太网  硬件地址 c8:60:00:61:06:16
@@ -74,23 +64,13 @@ virbr0    Link encap:以太网  硬件地址 ea:21:c3:5b:e6:1d
           碰撞:0 发送队列长度:0
           接收字节:0 (0.0 B)  发送字节:0 (0.0 B)
       </screen>
-      看，<emphasis>virbr0</emphasis>就是我们所需要的主机网络！当然了，你还可以添加更多的虚拟
-      网络，不过默认的目前已经够用了。
+      看，<emphasis>virbr0</emphasis>就是我们所需要的主机网络！当然了，你还可以添加更多的虚拟网络，不过默认的目前已经够用了。
     </para>
   </section>
   <section>
     <title>搭建桥接网络</title>
     <para>
-      桥接网络我们同样可以通过<emphasis>virt-manager</emphasis>添加，但是<emphasis>virt-manager</emphasis>
-      默认并没有创建桥接网络的，所以需要我们动手设置。打开虚拟系统管理器，进入<emphasis>Connection Details</emphasis>
-      选择网络接口，点击添加按钮，这是出现一个设置对话框，<emphasis>Interface type</emphasis>选择桥接，然后
-      点击下一步，<emphasis>名称</emphasis>使用默认的<emphasis>br0</emphasis>即可，当然你也可以选择一个拉风
-      的名字，<emphasis>Start mode</emphasis>选择<emphasis>onboot</emphasis>，<emphasis>Active now</emphasis>
-      勾选上吧，这样保证配置立即生效，<emphasis>IP settings</emphasis>可以选择<emphasis>DHCP</emphasis>，
-      也可以选择<emphasis>Static</emphasis>，最后选择桥接绑定的物理接口，这里选择<emphasis>eth0</emphasis>，
-      当然了，如果你有多块网卡的话，也可以选择别的接口，但是不要选择<emphasis>lo</emphasis>，这是系统内部的
-      回路系统，显然是不行的！最后点击完成，然后去上个厕所什么的，因为<emphasis>virt-manager</emphasis>创建
-      桥接的时候会耗费一些时间。
+      桥接网络我们同样可以通过<emphasis>virt-manager</emphasis>添加，但是<emphasis>virt-manager</emphasis>默认并没有创建桥接网络的，所以需要我们动手设置。打开虚拟系统管理器，进入<emphasis>Connection Details</emphasis>选择网络接口，点击添加按钮，这是出现一个设置对话框，<emphasis>Interface type</emphasis>选择桥接，然后点击下一步，<emphasis>名称</emphasis>使用默认的<emphasis>br0</emphasis>即可，当然你也可以选择一个拉风的名字，<emphasis>Start mode</emphasis>选择<emphasis>onboot</emphasis>，<emphasis>Active now</emphasis>勾选上吧，这样保证配置立即生效，<emphasis>IP settings</emphasis>可以选择<emphasis>DHCP</emphasis>，也可以选择<emphasis>Static</emphasis>，最后选择桥接绑定的物理接口，这里选择<emphasis>eth0</emphasis>，当然了，如果你有多块网卡的话，也可以选择别的接口，但是不要选择<emphasis>lo</emphasis>，这是系统内部的回路系统，显然是不行的！最后点击完成，然后去上个厕所什么的，因为<emphasis>virt-manager</emphasis>创建桥接的时候会耗费一些时间。
       <para>
         最终我们得到的就是下面的结果： 
       <screen>
@@ -135,26 +115,19 @@ virbr0    Link encap:以太网  硬件地址 d6:0f:1c:fd:6c:64
   <section>
     <title>搭建VDE网络</title>
     <para>
-      VDE的全称叫做<emphasis>虚拟分布式网络</emphasis>说得通俗一点就是虚拟网络设备，当然VDE项目的目标
-      远远不止如此，但是对于我们来说，这样理解已经够用了。再用简单的语言解释一下，VDE就是通过程序来模拟
-      网络设备，比如交换机（<emphasis>vde_switch</emphasis>），路由器（<emphasis>slirpvde</emphasis>）
-      等。好，接下来让我们看看他的庐山真面目吧：
+      VDE的全称叫做<emphasis>虚拟分布式网络</emphasis>说得通俗一点就是虚拟网络设备，当然VDE项目的目标远远不止如此，但是对于我们来说，这样理解已经够用了。再用简单的语言解释一下，VDE就是通过程序来模拟网络设备，比如交换机（<emphasis>vde_switch</emphasis>），路由器（<emphasis>slirpvde</emphasis>）等。好，接下来让我们看看他的庐山真面目吧：
       <screen>
 <prompt>liunx@ubuntu:~/Work/Emulator/work/vde$</prompt> <userinput>vde_switch -s /tmp/switch</userinput>
 
 vde$
       </screen>
-      嗯，看样子没什么反应啊，这是什么情况？好吧，接下来就让我对这个命令做个解释，你就会明白了。
-      <emphasis>vde_switch</emphasis>用来模拟交换机设备的，有了交换机，我们就可以接设备了，但是总要有个
-      接口才行啊，好那么我们继续往下看：
+      嗯，看样子没什么反应啊，这是什么情况？好吧，接下来就让我对这个命令做个解释，你就会明白了。<emphasis>vde_switch</emphasis>用来模拟交换机设备的，有了交换机，我们就可以接设备了，但是总要有个接口才行啊，好那么我们继续往下看：
       <screen>
 <prompt>liunx@ubuntu:~$ </prompt><userinput>ls /tmp/switch/</userinput>
 ctl
 liunx@ubuntu:~$
       </screen>
-      这里<emphasis>vde_switch</emphasis>创建了名为<filename>/tmp/switch/ctl</filename>的<emphasis>socket</emphasis>
-      文件，这里就是链接虚拟交换机的接口，我们只要在<emphasis>qemu</emphasis>中指定这个文件，就可以连接到虚拟交换机
-      上了，下面看看我们的配置：
+      这里<emphasis>vde_switch</emphasis>创建了名为<filename>/tmp/switch/ctl</filename>的<emphasis>socket</emphasis>文件，这里就是链接虚拟交换机的接口，我们只要在<emphasis>qemu</emphasis>中指定这个文件，就可以连接到虚拟交换机上了，下面看看我们的配置：
       <screen>
 <prompt>liunx@ubuntu:~/Work/OpenWrt/work/x86$ </prompt><userinput>cat boot.sh</userinput>
 #!/bin/bash -
@@ -175,8 +148,7 @@ set -o nounset                              # Treat unset variables as an error
         -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:01 \
         -net vde,sock=/tmp/switch
       </screen>
-      看我们最后的<emphasis>-net</emphasis>配置，上面的配置是制定网卡模型和MAC地址，这个是通用的，主要是后面的配置
-      我们指定了<emphasis>vde</emphasis>网络，这样我们的<emphasis>VDE</emphasis>网络就配置好了。
+      看我们最后的<emphasis>-net</emphasis>配置，上面的配置是制定网卡模型和MAC地址，这个是通用的，主要是后面的配置我们指定了<emphasis>vde</emphasis>网络，这样我们的<emphasis>VDE</emphasis>网络就配置好了。
     </para>
   </section>
 </chapter>

@@ -2,7 +2,7 @@
 # Makefile for docbook
 #
 
-TARGETS = routerDIY.html #routerDIY.pdf
+TARGETS = routerDIY.html routerDIY.pdf
 XMLS = routerDIY.xml chap1.xml chap2.xml chap3.xml chap4.xml \
        chap5.xml appa.xml bibliography.xml
 

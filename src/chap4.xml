@@ -2,19 +2,15 @@
   xmlns:xlink='http://www.w3.org/1999/xlink'>
   <title>第四章：设备集成</title>
   <para>
-    前面，我们介绍了如何搭建运行环境，网络环境，还有运行嵌入式系统，但是一切的一切也只是万里长征第一步，
-    接下来我们就要到设计和集成的阶段了。
+    前面，我们介绍了如何搭建运行环境，网络环境，还有运行嵌入式系统，但是一切的一切也只是万里长征第一步，接下来我们就要到设计和集成的阶段了。
   </para>
   <section>
     <title>组装路由器</title>
     <para>
-      一台路由器究竟由什么构成的呢？当然了，我们不是在讨论硬件电路的设计问题，不用关心电源了，电路
-      布局之类的事情，我们关心是一台路由器是由哪些功能部分组成的。
+      一台路由器究竟由什么构成的呢？当然了，我们不是在讨论硬件电路的设计问题，不用关心电源了，电路布局之类的事情，我们关心是一台路由器是由哪些功能部分组成的。
     </para>
     <para>
-      首先，路由器的职责就是帮助我们上网的，那是肯定的了，要上网，那至少要有一个WAN口了，WAN口，顾名
-      思义，就是连接到电信运营商链路的端口了，他的前端可能是一只猫，两只狗，三只羊什么的东东，好了，
-      那些都是运营商的工作，我们就不必关心了。
+      首先，路由器的职责就是帮助我们上网的，那是肯定的了，要上网，那至少要有一个WAN口了，WAN口，顾名思义，就是连接到电信运营商链路的端口了，他的前端可能是一只猫，两只狗，三只羊什么的东东，好了，那些都是运营商的工作，我们就不必关心了。
     </para>
     <para>
       好，接下来开始动手了！首先看看我们的<emphasis>路由器</emphasis>应该是这幅模样：
@@ -22,9 +18,7 @@
         <imagedata align="right" width="6in" format="PNG"
           fileref="../images/Router.png"/>
       </imageobject>
-      这里，我们设计的路由器功能是有1个<emphasis>wan</emphasis>口，4个<emphasis>lan</emphasis>口组成。
-      看起来像一只章鱼，我们暂且给他起个名字叫<quote>老章</quote>吧，<quote>老章</quote>设计草图出来
-      了，下面进入建造阶段：
+      这里，我们设计的路由器功能是有1个<emphasis>wan</emphasis>口，4个<emphasis>lan</emphasis>口组成。看起来像一只章鱼，我们暂且给他起个名字叫<quote>老章</quote>吧，<quote>老章</quote>设计草图出来了，下面进入建造阶段：
     </para>
     <para>
       下面看看我们的<emphasis>qemu</emphasis>的配置：
@@ -50,10 +44,7 @@ set -o nounset                              # Treat unset variables as an error
         -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:14 \
         -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:15
       </screen>
-      从配置参数中可以看出，我们创建了5个网卡，基本上，<quote>老章</quote>的躯体就算是出来了。可是
-      奇怪的是，根本无法区别谁是<emphasis>wan口</emphasis>，谁是<emphasis>lan口</emphasis>啊。接下
-      来需要系统来划分功能了。默认<emphasis>linux</emphasis>配置并不支持e1000的网卡，所以我们需要
-      配置内核：进入<emphasis>buildroot</emphasis>顶层目录，然后<command>make linux-menuconfig</command>
+      从配置参数中可以看出，我们创建了5个网卡，基本上，<quote>老章</quote>的躯体就算是出来了。可是奇怪的是，根本无法区别谁是<emphasis>wan口</emphasis>，谁是<emphasis>lan口</emphasis>啊。接下来需要系统来划分功能了。默认<emphasis>linux</emphasis>配置并不支持e1000的网卡，所以我们需要配置内核：进入<emphasis>buildroot</emphasis>顶层目录，然后<command>make linux-menuconfig</command>
       此时我们进入了内核配置界面，勾选
       <menuchoice>
         <guimenu>Device Drivers</guimenu>
@@ -153,7 +144,8 @@ ACPI: (supports S0 S3 S5)
 ACPI: Using PIC for interrupt routing
 PCI: Using host bridge windows from ACPI; if necessary, use "pci=nocrs" and report a bug
 ACPI: PCI Root Bridge [PCI0] (domain 0000 [bus 00-ff])
-pci_root PNP0A03:00: fail to add MMCONFIG information, can't access extended PCI configuration space under this bridge.
+pci_root PNP0A03:00: fail to add MMCONFIG information, can't access extended PCI configuration 
+space under this bridge.
 PCI host bridge to bus 0000:00
 pci_bus 0000:00: root bus resource [bus 00-ff]
 pci_bus 0000:00: root bus resource [io  0x0000-0x0cf7]
@@ -308,9 +300,7 @@ lo        Link encap:Local Loopback
           collisions:0 txqueuelen:0
           RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
       </screen>
-      这里我们没有创建<emphasis>tap</emphasis>连接，因此不需要超级用户权限。<emphasis>buildroot</emphasis>
-      提示登录账户时，我们只需输入<quote>root</quote>即可，不需要密码。运行<command>ifconfig -a</command>
-      可以看到，5块网络赫然在目。
+      这里我们没有创建<emphasis>tap</emphasis>连接，因此不需要超级用户权限。<emphasis>buildroot</emphasis>提示登录账户时，我们只需输入<quote>root</quote>即可，不需要密码。运行<command>ifconfig -a</command>可以看到，5块网卡赫然在目。
     </para>
     <qandaset defaultlabel='qanda'>
       <qandaentry>
@@ -330,15 +320,12 @@ lo        Link encap:Local Loopback
     <section>
       <title>lan侧桥接设置</title>
       <para>
-        其实，路由器的<emphasis>wan/lan</emphasis>的区分是由软件系统进行功能划分的，<emphasis>lan侧</emphasis>
-        和<emphasis>wan侧</emphasis>的功能显然是有区别的，<emphasis>wan侧</emphasis>网络只需获取一个有效的
-        地址即可工作了，而<emphasis>lan侧</emphasis>则需要桥接进行统一管理。
+        其实，路由器的<emphasis>wan/lan</emphasis>的区分是由软件系统进行功能划分的，<emphasis>lan侧</emphasis>和<emphasis>wan侧</emphasis>的功能显然是有区别的，<emphasis>wan侧</emphasis>网络只需获取一个有效的地址即可工作了，而<emphasis>lan侧</emphasis>则需要桥接进行统一管理。
       </para>
       <section>
         <title>选材</title>
         <para>
-          <emphasis>lan侧</emphasis>桥接的设备需要两个层面的配置，一个是内核打开桥接功能，另一个是应用层
-          软件进行桥接设置。首先，配置内核：<command>make linux-menuconfig</command>，勾选
+          <emphasis>lan侧</emphasis>桥接的设备需要两个层面的配置，一个是内核打开桥接功能，另一个是应用层软件进行桥接设置。首先，配置内核：<command>make linux-menuconfig</command>，勾选
           <menuchoice>
             <guimenu>Networking support</guimenu>
             <guisubmenu>Networking options</guisubmenu>
@@ -358,8 +345,7 @@ lo        Link encap:Local Loopback
       <section>
         <title>添加<emphasis>vde wire</emphasis></title>
         <para>
-          上文中我们说到组装<quote>老章</quote>的躯体，虽然网卡装上了，但是却没有没有和外界联系的接口，显然是
-          个<quote>中看不中用</quote>的货色，这怎么行呢？那么，我们需要给他提供一个和外部链接的线了：
+          上文中我们说到组装<quote>老章</quote>的躯体，虽然网卡装上了，但是却没有没有和外界联系的接口，显然是个<quote>中看不中用</quote>的货色，这怎么行呢？那么，我们需要给他提供一个和外部链接的线了：
           <screen>
 <prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images$ </prompt><userinput>cat boot.sh</userinput>
 #!/bin/bash -
@@ -382,9 +368,7 @@ set -o nounset                              # Treat unset variables as an error
         -net nic,vlan=4,model=e1000,macaddr=52:54:00:12:34:14 \
         -net vde,vlan=4,sock=/tmp/lan4.ctl[]
           </screen>
-          对比上文中的<emphasis>boot.sh</emphasis>，我们首先为每个<emphasis>lan口</emphasis>配置了
-          独立的<emphasis>vlan ID</emphasis>，同时每个<emphasis>lan口</emphasis>会创建一个<emphasis>socket</emphasis>
-          文件来作为连接的<quote>线</quote>，OK，这样，<quote>老章</quote>终于可以干点活了。
+          对比上文中的<emphasis>boot.sh</emphasis>，我们首先为每个<emphasis>lan口</emphasis>配置了独立的<emphasis>vlan ID</emphasis>，同时每个<emphasis>lan口</emphasis>会创建一个<emphasis>socket</emphasis>文件来作为连接的<quote>线</quote>，OK，这样，<quote>老章</quote>终于可以干点活了。
         </para>
       </section>
       <section>
@@ -439,13 +423,14 @@ case $MODE in
         ;;
 esac
           </screen>
-          这里，我把<emphasis>bridge</emphasis>脚本放到了<filename>/usr/lib/scripts</filename>目录里，
-          这样方便管理，那么这个脚本该怎么用呢？
+          这里，我把<emphasis>bridge</emphasis>脚本放到了<filename>/usr/lib/scripts</filename>目录里，这样方便管理，那么这个脚本该怎么用呢？
           <screen>
 <prompt># </prompt><userinput>ls -la /etc/network/if-pre-up.d/bridge</userinput>
-lrwxrwxrwx    1 root     root            23 Feb 12 13:30 /etc/network/if-pre-up.d/bridge -> /usr/lib/scripts/bridge
+lrwxrwxrwx    1 root     root            23 Feb 12 13:30 /etc/network/if-pre-up.d/bridge -> /usr/lib/
+scripts/bridge
 <prompt># </prompt><userinput>ls -la /etc/network/if-post-down.d/bridge</userinput>
-lrwxrwxrwx    1 root     root            23 Feb 12 13:31 /etc/network/if-post-down.d/bridge -> /usr/lib/scripts/bridge
+lrwxrwxrwx    1 root     root            23 Feb 12 13:31 /etc/network/if-post-down.d/bridge -> /usr/
+lib/scripts/bridge
           </screen>
           看，我们做了个符号连接，他就是用到这里！
         </para>
@@ -453,8 +438,7 @@ lrwxrwxrwx    1 root     root            23 Feb 12 13:31 /etc/network/if-post-do
       <section>
         <title>配置<emphasis>interfaces</emphasis></title>
         <para>
-          仅仅创建了<emphasis>bridge</emphasis>脚本还不够，我们还需要修改<filename>/etc/network/interfaces</filename>
-          文件来触发他执行：
+          仅仅创建了<emphasis>bridge</emphasis>脚本还不够，我们还需要修改<filename>/etc/network/interfaces</filename>文件来触发他执行：
           <screen>
 <prompt># </prompt><userinput>cat /etc/network/interfaces</userinput>
 
@@ -474,8 +458,7 @@ broadcast 192.168.1.255
       <section>
         <title>配置<emphasis>dnsmasq</emphasis></title>
         <para>
-          桥接接口总算是设置好了，可是，客户如何从路由器<emphasis>lan侧</emphasis>获取<emphasis>IP</emphasis>
-          呢？显然，还是需要<quote>自己动手，丰衣足食</quote>了，那么就让<emphasis>dnsmasq</emphasis>登场
+          桥接接口总算是设置好了，可是，客户如何从路由器<emphasis>lan侧</emphasis>获取<emphasis>IP</emphasis>呢？显然，还是需要<quote>自己动手，丰衣足食</quote>了，那么就让<emphasis>dnsmasq</emphasis>登场
           了。
           <screen>
 <prompt># </prompt><userinput>cat /etc/dnsmasq.conf</userinput>
@@ -540,8 +523,7 @@ exit $?
     <section>
       <title>功能验证</title>
       <para>
-        好了，一个崭新的<quote>动物人</quote>终于诞生了，接下来就该是<quote>是骡子是马，牵出去溜溜了！</quote>
-        显然，单是一个<quote>老章</quote>恐怕看不出来效果了，那么就让<emphasis>openwrt</emphasis>友情出演！
+        好了，一个崭新的<quote>动物人</quote>终于诞生了，接下来就该是<quote>是骡子是马，牵出去溜溜了！</quote>显然，单是一个<quote>老章</quote>恐怕看不出来效果了，那么就让<emphasis>openwrt</emphasis>友情出演！
         <screen>
 <prompt>liunx@ubuntu:~/Work/OpenWrt/work/x86$ </prompt><userinput>cat boot2.sh</userinput>
 #!/bin/bash -
@@ -559,8 +541,7 @@ set -o nounset                              # Treat unset variables as an error
         -net vde,vlan=0,sock=/tmp/lan1.ctl
 </emphasis>
         </screen>
-        重点就在这里，通过<quote>老章</quote>的<quote>线</quote>连接上去！接下来<command>./boot2.sh</command>
-        然后从<quote>老章</quote>获取<emphasis>IP</emphasis>看看！
+        重点就在这里，通过<quote>老章</quote>的<quote>线</quote>连接上去！接下来<command>./boot2.sh</command>然后从<quote>老章</quote>获取<emphasis>IP</emphasis>看看！
         <screen>
 <prompt>root@OpenWrt:/# </prompt><userinput>udhcpc -i eth0</userinput>
 udhcpc (v1.19.4) started

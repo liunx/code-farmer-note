@@ -2,27 +2,20 @@
   xmlns:xlink='http://www.w3.org/1999/xlink'>
   <title>第五章：防火墙篇</title>
   <para>
-    防火墙的基本作用从他的名字就可以看出来，<quote>墙</quote>的作用不言而喻，大家都明白，就是
-    防止别人进入，比如说世界八大奇迹之一的长城，就是一堵大墙，当然了，这是一个有形的<quote>墙</quote>，
-    而我们讨论的是则是无形的<quote>墙</quote>，其实找个更直白的例子就是天朝的<quote>大防火墙</quote>，
-    如果你想XXX的话，你就感受到他的存在了，剩下的你懂得。
+    防火墙的基本作用从他的名字就可以看出来，<quote>墙</quote>的作用不言而喻，大家都明白，就是防止别人进入，比如说世界八大奇迹之一的长城，就是一堵大墙，当然了，这是一个有形的<quote>墙</quote>，而我们讨论的是则是无形的<quote>墙</quote>，其实找个更直白的例子就是天朝的<quote>大防火墙</quote>，如果你想XXX的话，你就感受到他的存在了，剩下的你懂得。
   </para>
   <para>
-    好了，言归正传，防火墙的作用简单的概括就是<emphasis>数据过滤</emphasis>，他不仅过滤进入的数据，
-    同时也过滤出去的数据。其实在网络世界中，事情更加复杂，防火墙还需要对数据进行转发等工作，这里我们
-    一一讲述。
+    好了，言归正传，防火墙的作用简单的概括就是<emphasis>数据过滤</emphasis>，他不仅过滤进入的数据，同时也过滤出去的数据。其实在网络世界中，事情更加复杂，防火墙还需要对数据进行转发等工作，这里我们一一讲述。
   </para>
   <section>
     <title>准备工作</title>
     <para>
-      有道是<quote>磨刀不误砍材工</quote>，在开始搭建防火墙之前，我们需要做一些准备工作。防火墙的搭建
-      需要两个部分进行配置：
+      有道是<quote>磨刀不误砍材工</quote>，在开始搭建防火墙之前，我们需要做一些准备工作。防火墙的搭建需要两个部分进行配置：
       <orderedlist>
         <listitem>NetFilter</listitem>
         <listitem>iptables</listitem>
       </orderedlist>
-      简单的描述一下二者的关系：<emphasis>NetFilter</emphasis>是用来执行防火墙规则的，<emphasis>iptables</emphasis>
-      则是用来定义防火墙规则的。首先<command>make menuconfig</command>，进入
+      简单的描述一下二者的关系：<emphasis>NetFilter</emphasis>是用来执行防火墙规则的，<emphasis>iptables</emphasis>则是用来定义防火墙规则的。首先<command>make menuconfig</command>，进入
           <menuchoice>
             <guimenu>Package Selection for the target</guimenu>
             <guisubmenu>Networking applications</guisubmenu>
@@ -67,9 +60,7 @@
         <imagedata align="right" width="6in" format="PNG"
           fileref="../images/simple-firewall.png"/>
       </imageobject>
-      黄色的部分是通过<emphasis>vde_switch</emphasis>和<emphasis>slirpvde</emphasis>模拟的交换机网络，
-      这里<emphasis>slirpvde</emphasis>起到分配<emphasis>IP地址</emphasis>的作用。红色部分就是我们的
-      男主角<quote>老章</quote>了，蓝色部分就是由<emphasis>openwrt</emphasis>友情出演的<emphasis>wan</emphasis>
+      黄色的部分是通过<emphasis>vde_switch</emphasis>和<emphasis>slirpvde</emphasis>模拟的交换机网络，这里<emphasis>slirpvde</emphasis>起到分配<emphasis>IP地址</emphasis>的作用。红色部分就是我们的男主角<quote>老章</quote>了，蓝色部分就是由<emphasis>openwrt</emphasis>友情出演的<emphasis>wan</emphasis>
       侧主机和<emphasis>lan</emphasis>侧主机。
       </para>
       <para>
@@ -248,9 +239,7 @@ NET_PUB=10.0.0.0/24
 # Others
 ANYWHERE=0.0.0.0/0
           </screen>
-          这里我们需要区分的是公共接口和私有接口，公共接口就是<emphasis>eth0</emphasis>，
-          私有接口就是我们的<emphasis>br0</emphasis>了。公共接口和外部交换机相连，而私有接口
-          则和<emphasis>lan侧</emphasis>的主机相连。
+          这里我们需要区分的是公共接口和私有接口，公共接口就是<emphasis>eth0</emphasis>，私有接口就是我们的<emphasis>br0</emphasis>了。公共接口和外部交换机相连，而私有接口则和<emphasis>lan侧</emphasis>的主机相连。
         </para>
       </section>
       <section>
@@ -274,8 +263,7 @@ Chain OUTPUT (policy ACCEPT 386 packets, 26280 bytes)
           fileref="../images/simple-firewall2.png"/>
       </imageobject>
         <para>
-        这样的路由器简直就成了筛子了，显然不是我们想要的结果，这里我们设定一个严格而保守的策略，默认不
-        接受任何包。
+        这样的路由器简直就成了筛子了，显然不是我们想要的结果，这里我们设定一个严格而保守的策略，默认不接受任何包。
         </para>
         <screen>
 <prompt># </prompt><userinput>iptables -P INPUT DROP</userinput>
@@ -381,23 +369,19 @@ round-trip min/avg/max = 0.105/0.143/0.164 ms
 <prompt># </prompt><userinput>iptables -A OUTPUT -o $IF_PRV -d $NET_PRV -j ACCEPT</userinput>         
         </screen>
         <para>
-          接下来，我们要为私有网络添加路由规则，已完成我们的第二个目标，即私有网络能够访问
-          外部网络。
+          接下来，我们要为私有网络添加路由规则，已完成我们的第二个目标，即私有网络能够访问外部网络。
         </para>
         <screen>
 <prompt># </prompt><userinput>iptables -t nat -A POSTROUTING -s $NET_PRV -o $IF_PUB -j SNAT --to $IP_PUB</userinput>
         </screen>
         <para>
-          这里，我们需要网络地址<emphasis>NAT</emphasis>，并且我们的私有地址是无法被外部网络
-          认证的，因此我们需要把私有地址转换成公网地址，这样才能与外部网络传递数据，所以这种
-          对源地址做转换的模式叫源地址转换<emphasis>SNAT</emphasis>。
+          这里，我们需要网络地址<emphasis>NAT</emphasis>，并且我们的私有地址是无法被外部网络认证的，因此我们需要把私有地址转换成公网地址，这样才能与外部网络传递数据，所以这种对源地址做转换的模式叫源地址转换<emphasis>SNAT</emphasis>。
         </para>
       </section>
       <section>
         <title>开启服务</title>
         <para>
-          我们的路由器还需要提供一些基本的服务，比如<emphasis>DHCP</emphasis>服务，同时为了方便
-          调试，我们还要提供<emphasis>ICMP</emphasis>服务，所以我们还需要添加规则：
+          我们的路由器还需要提供一些基本的服务，比如<emphasis>DHCP</emphasis>服务，同时为了方便调试，我们还要提供<emphasis>ICMP</emphasis>服务，所以我们还需要添加规则：
           <screen>
 <prompt># </prompt><userinput>iptables -A INPUT -p icmp -j ACCEPT</userinput>
 <prompt># </prompt><userinput>iptables -A INPUT -p udp --dport 67:68 --sport 67:68 -j ACCEPT</userinput>
@@ -421,7 +405,6 @@ round-trip min/avg/max = 0.105/0.143/0.164 ms
 # Moditfied by Liunx
 
 
-##############################################################################
 # DEFAULT POLICY
 SetDefaultPolicy() {
 	# Drop everything
@@ -431,7 +414,6 @@ SetDefaultPolicy() {
 }
 
 
-##############################################################################
 # FLUSH TABLES
 FlushTables() {
 	iptables -F -t nat
@@ -441,7 +423,6 @@ FlushTables() {
 }
 
 
-##############################################################################
 # ROUTING
 EnableRouting() {
 	echo 1 &gt; /proc/sys/net/ipv4/ip_forward
@@ -452,7 +433,6 @@ DisableRouting() {
 }
 
 
-##############################################################################
 # FORWARDING
 SetForwardingRules() {
 	iptables -A FORWARD -i $IF_PUB -o $IF_PRV -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
@@ -460,7 +440,6 @@ SetForwardingRules() {
 }
 
 
-##############################################################################
 # LOOPBACK
 SetLoopbackRules() {
 	# Allow everything
@@ -469,7 +448,6 @@ SetLoopbackRules() {
 }
 
 
-##############################################################################
 # PRIVATE INTERFACES
 SetPrivateInterfaceRules() {
 	# Allow everything
@@ -478,7 +456,6 @@ SetPrivateInterfaceRules() {
 }
 
 
-#############################################################################
 # PUBLIC INTERFACES
 SetPublicInterfaceRules() {
 	iptables -A INPUT -i $IF_PUB -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
@@ -486,7 +463,6 @@ SetPublicInterfaceRules() {
 }
 
 
-##############################################################################
 # SOURCE NAT
 EnableSourceNAT() {
 	# Then source NAT everything else
@@ -516,13 +492,11 @@ SetDropRules() {
 }
 
 
-##############################################################################
 # SCRIPT ENTRY POINT
 
 echo -n "Firewall configuration..."
 echo $1
 
-##############################################################################
 # ENVIRONMENT
 
 # Private interface
@@ -538,7 +512,6 @@ NET_PUB=10.0.2.0/24
 # Others
 ANYWHERE=0.0.0.0/0
 
-##############################################################################
 # COMMAND LINE
 
 case "$1" in

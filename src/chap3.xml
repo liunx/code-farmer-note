@@ -2,23 +2,15 @@
   xmlns:xlink='http://www.w3.org/1999/xlink'>
   <title>第三章：搭建嵌入式系统</title>
   <para>
-    <emphasis>嵌入式系统</emphasis>是一个很广泛的概念，简单的说，<emphasis>嵌入式系统</emphasis>
-    是一个“小”系统，比如说手机，车载设备等，这里我们构建的<emphasis>嵌入式</emphasis>系统就是
-    具有这个特点，比如说他的体积很小，启动速度快，功能单一，相对于PC系统来说，更加方便我们测试
-    和实验，而且内存占用少，所以配置相对低的电脑也可以轻松运行，可以说物美价廉。
+    <emphasis>嵌入式系统</emphasis>是一个很广泛的概念，简单的说，<emphasis>嵌入式系统</emphasis>是一个“小”系统，比如说手机，车载设备等，这里我们构建的<emphasis>嵌入式</emphasis>系统就是具有这个特点，比如说他的体积很小，启动速度快，功能单一，相对于PC系统来说，更加方便我们测试和实验，而且内存占用少，所以配置相对低的电脑也可以轻松运行，可以说物美价廉。
   </para>
   <section>
     <title>运行OpenWrt</title>
     <para>
-      好了，外围环境搞定了，接下来就是要选择客户端系统了，一台路由器不仅仅有硬件系统构成的，还需要软件系统
-      配合才能发挥作用，否则就是<emphasis>裸奔</emphasis>了。客户端系统的选用标准前面我已介绍过了，下面就
-      开始编译客户端系统了。
+      好了，外围环境搞定了，接下来就是要选择客户端系统了，一台路由器不仅仅有硬件系统构成的，还需要软件系统配合才能发挥作用，否则就是<emphasis>裸奔</emphasis>了。客户端系统的选用标准前面我已介绍过了，下面就开始编译客户端系统了。
     </para>
     <para>
-      首先登场的是<emphasis>OpenWrt</emphasis>，这是一款很出名的开源路由器系统，当然是基于<emphasis>linux</emphasis>
-      的了，那么<emphasis>OpenWrt</emphasis>已经就是一个路由系统了，作为嵌入式系统，他的体积很小，启动速度
-      很快，加上其支持<emphasis>X86</emphasis>平台，很符合我们的要求。而且他包含了大量的开源软件，使得我们
-      不必满世界的移植程序了，Perfact！
+      首先登场的是<emphasis>OpenWrt</emphasis>，这是一款很出名的开源路由器系统，当然是基于<emphasis>linux</emphasis>的了，那么<emphasis>OpenWrt</emphasis>已经就是一个路由系统了，作为嵌入式系统，他的体积很小，启动速度很快，加上其支持<emphasis>X86</emphasis>平台，很符合我们的要求。而且他包含了大量的开源软件，使得我们不必满世界的移植程序了，Perfact！
     </para>
     <para>
       获得<emphasis>OpenWrt</emphasis>系统的方式有以下几种：
@@ -30,14 +22,12 @@
           获取编译好的二进制镜像系统
         </listitem>
       </orderedlist>
-      编译<emphasis>OpenWrt</emphasis>也不难，可是时间上实在是太长了，如果你的电脑不够Power的话，那么还是省省吧，
-      还好，<emphasis>OpenWrt</emphasis>为我们编译好了各种平台上镜像版本，同时还包括软件仓库，这样既节约了时间，
-      又方便新手入门，只是一举多得。
+      编译<emphasis>OpenWrt</emphasis>也不难，可是时间上实在是太长了，如果你的电脑不够Power的话，那么还是省省吧，还好，<emphasis>OpenWrt</emphasis>为我们编译好了各种平台上镜像版本，同时还包括软件仓库，这样既节约了时间，又方便新手入门，只是一举多得。
     </para>
     <para>
       好，那么去哪下载官方的二进制镜像呢，看这里<ulink url="http://downloads.openwrt.org/"></ulink>。
     <imageobject>
-      <imagedata align="left" width="10in" format="PNG"
+      <imagedata align="left" width="6in" format="PNG"
         fileref="../images/openwrt-download.png"/>
     </imageobject>
     这么多选择，该选哪一个呢？这里我们关注有一下几个版本入口：
@@ -46,41 +36,27 @@
       <listitem>kamikaze</listitem>
       <listitem>snapshots</listitem>
     </orderedlist>
-    <emphasis>backfire</emphasis>和<emphasis>kamikaze</emphasis>属于连个稳定的分支，正常使用没有太大问题，这里
-    我们可以使用他们的<emphasis>x86</emphasis>版本，但是这里我们选择<emphasis>snapshots</emphasis>版本，虽然快照
-    版本相对来说不是很稳定，但是代码更新很快，内核版本，软件包也更新，其实快照版本就是用来给大家测试用的，以便
-    获取<emphasis>Bug</emphasis>的反馈，增强系统的稳定性，所以，本着参与的目的，我们选择<emphasis>snapshots</emphasis>
-    版本，如果有问题的话，我们还可以反馈一些内容了。<emphasis>但是，需要注意的是，由于这是个快照版本，内核模块
-      重新编译的话，是使得安装内核模块时失败</emphasis>，还好整个系统不是很大，我们只要及时跟新镜像就是了，而且
-    也用不到所有的软件包的，所以够用了。
+    <emphasis>backfire</emphasis>和<emphasis>kamikaze</emphasis>属于连个稳定的分支，正常使用没有太大问题，这里我们可以使用他们的<emphasis>x86</emphasis>版本，但是这里我们选择<emphasis>snapshots</emphasis>版本，虽然快照版本相对来说不是很稳定，但是代码更新很快，内核版本，软件包也更新，其实快照版本就是用来给大家测试用的，以便获取<emphasis>Bug</emphasis>的反馈，增强系统的稳定性，所以，本着参与的目的，我们选择<emphasis>snapshots</emphasis>版本，如果有问题的话，我们还可以反馈一些内容了。<emphasis>但是，需要注意的是，由于这是个快照版本，内核模块重新编译的话，是使得安装内核模块时失败</emphasis>，还好整个系统不是很大，我们只要及时跟新镜像就是了，而且也用不到所有的软件包的，所以够用了。
     <para>
       接下来，我们进入<emphasis>snapshots</emphasis>目录，下载镜像。
     <imageobject>
-      <imagedata align="left" width="10in" format="PNG"
+      <imagedata align="left" width="6in" format="PNG"
         fileref="../images/openwrt-download2.png"/>
     </imageobject>
     这里，我们只关注三个镜像文件：
     <orderedlist>
       <listitem>
-        <ulink url="http://downloads.openwrt.org/snapshots/trunk/x86/openwrt-x86-generic-combined-ext4.img.gz">
-          openwrt-x86-generic-combined-ext4.img.gz</ulink></listitem>
-      <listitem><ulink url="http://downloads.openwrt.org/snapshots/trunk/x86/openwrt-x86-generic-rootfs-ext4.img.gz">
-      openwrt-x86-generic-rootfs-ext4.img.gz</ulink></listitem>
-  <listitem><ulink url="http://downloads.openwrt.org/snapshots/trunk/x86/openwrt-x86-generic-vmlinuz">
-    openwrt-x86-generic-vmlinuz</ulink>
+        <ulink url="http://downloads.openwrt.org/snapshots/trunk/x86/openwrt-x86-generic-combined-ext4.img.gz"></ulink></listitem>
+      <listitem><ulink url="http://downloads.openwrt.org/snapshots/trunk/x86/openwrt-x86-generic-rootfs-ext4.img.gz"></ulink></listitem>
+  <listitem><ulink url="http://downloads.openwrt.org/snapshots/trunk/x86/openwrt-x86-generic-vmlinuz"></ulink>
   </listitem>
     </orderedlist>
-    <emphasis>openwrt-x86-generic-combined-ext4.img.gz</emphasis>包括了引导程序、内核和跟文件系统，优点是简单易用，
-    缺点是无法挂载，所以导入配置文件的时候有些麻烦了，但是也没关系的，如果我们安装了<emphasis>openWrt</emphasis>
-    自带的用户界面的话，可以导入/导出配置文件的，但是目前来说作用还不是很大，反而增加了复杂性，所以我们选择后面
-    两个镜像来配合使用，前者只包含了根文件系统，后者是内核。
+    <emphasis>openwrt-x86-generic-combined-ext4.img.gz</emphasis>包括了引导程序、内核和跟文件系统，优点是简单易用，缺点是无法挂载，所以导入配置文件的时候有些麻烦了，但是也没关系的，如果我们安装了<emphasis>openWrt</emphasis>自带的用户界面的话，可以导入/导出配置文件的，但是目前来说作用还不是很大，反而增加了复杂性，所以我们选择后面两个镜像来配合使用，前者只包含了根文件系统，后者是内核。
     </para>
     <para>
-      好了，下面，见证奇迹的时刻到了，前面做了那么多艰苦卓绝的工作，该是出成果的时候了！
-      先看一下我们的文件布局：
-      <computeroutput>
-        <literallayout>
-liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ tree
+      好了，下面，见证奇迹的时刻到了，前面做了那么多艰苦卓绝的工作，该是出成果的时候了！先看一下我们的文件布局：
+      <screen>
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ </prompt><userinput>tree</userinput>
 .
 ├── boot.sh
 ├── firewall
@@ -95,18 +71,12 @@ liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ tree
 └── rootfs
 
 2 directories, 9 files
-liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$
-        </literallayout>
-      </computeroutput>
+      </screen>
       再看我们的运行脚本：
-      <computeroutput>
-        <literallayout>
-liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ ls
+      <screen>
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ </prompt><userinput>ls</userinput>
 boot.sh  firewall  images  network  qemu-ifdown  qemu-ifup  rootfs
-liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ clear
-liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ ls
-boot.sh  firewall  images  network  qemu-ifdown  qemu-ifup  rootfs
-liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ cat qemu-ifdown
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ </prompt><userinput>cat qemu-ifdown</userinput>
 #!/bin/bash -
 
 bridge=virbr0
@@ -118,25 +88,8 @@ liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ cat qemu-ifup
 bridge=virbr0
 ifconfig $1 0.0.0.0 promisc up
 brctl addif $bridge $1
-liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ cat boot.sh
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ </prompt><userinput>cat boot.sh</userinput>
 #!/bin/bash -
-#===============================================================================
-#
-#          FILE: boot.sh
-#
-#         USAGE: ./boot.sh
-#
-#   DESCRIPTION:
-#
-#       OPTIONS: ---
-#  REQUIREMENTS: ---
-#          BUGS: ---
-#         NOTES: ---
-#        AUTHOR: YOUR NAME (),
-#  ORGANIZATION:
-#       CREATED: 2012年05月23日 17时47分46秒 CST
-#      REVISION:  ---
-#===============================================================================
 
 set -o nounset                              # Treat unset variables as an error
 
@@ -155,9 +108,7 @@ set -o nounset                              # Treat unset variables as an error
         -net nic,vlan=2,model=pcnet,macaddr="12:34:56:78:9a:02" \
         -net socket,vlan=2,listen=:8011
 
-liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$
-        </literallayout>
-      </computeroutput>
+      </screen>
       看好了，大家！这里我们需要五个文件：
     <orderedlist>
       <listitem>boot.sh</listitem>
@@ -169,9 +120,11 @@ liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$
     你都找到了吗？
     </para>
     最后，激动人心的时刻到了，运行！
-    <command>sudo ./boot.sh</command>
+    <screen>
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ </prompt><userinput>sudo ./boot.sh</userinput>
+    </screen>
     <imageobject>
-      <imagedata align="left" width="10in" format="PNG"
+      <imagedata align="left" width="6in" format="PNG"
         fileref="../images/openwrt-cli.png"/>
     </imageobject>
     </para>
@@ -179,27 +132,17 @@ liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$
   <section>
     <title>运行buildroot</title>
     <para>
-      <emphasis>buildroot</emphasis>可是<emphasis>openwrt</emphasis>的老前辈了，因为<emphasis>openwrt</emphasis>
-      项目就是在<emphasis>buildroot</emphasis>的基础上构建的，不免让人对<emphasis>buildroot</emphasis>
-      里的大牛们新生敬意。不过运行<emphasis>buildroot</emphasis>就没有那么好的“现成饭”可以吃了，我们
-      不得不响应伟大领袖的号召--“自己动手，丰衣足食”。大家一看便知，这是让我们自己编译<emphasis>buildroot</emphasis>
-      了，还好，<emphasis>buildroot</emphasis>的配置很简单，还有现成的模板可供我们参考，编译起来也比
-      <emphasis>openwrt</emphasis>省时省力，而且还有文档可供参考，我们不必“摸着石头过河”了。
+      <emphasis>buildroot</emphasis>可是<emphasis>openwrt</emphasis>的老前辈了，因为<emphasis>openwrt</emphasis>项目就是在<emphasis>buildroot</emphasis>的基础上构建的，不免让人对<emphasis>buildroot</emphasis>里的大牛们新生敬意。不过运行<emphasis>buildroot</emphasis>就没有那么好的“现成饭”可以吃了，我们不得不响应伟大领袖的号召--“自己动手，丰衣足食”。大家一看便知，这是让我们自己编译<emphasis>buildroot</emphasis>了，还好，<emphasis>buildroot</emphasis>的配置很简单，还有现成的模板可供我们参考，编译起来也比<emphasis>openwrt</emphasis>省时省力，而且还有文档可供参考，我们不必“摸着石头过河”了。
     </para>
     <para>
-      <emphasis>第一步</emphasis>下载源代码，解决依赖关系。进入这里<ulink url="http://buildroot.uclibc.org/downloads/"></ulink>
-      下载最近的一个稳定版本，<emphasis>buildroot</emphasis>是按日期发布的，所以很容易找到最新的版本，这里我们下载
-      <ulink url="http://buildroot.uclibc.org/downloads/buildroot-2012.11.tar.bz2">buildroot-2012.11.tar.bz2</ulink>
-      接下来解压：
+      <emphasis>第一步</emphasis>下载源代码，解决依赖关系。进入这里<ulink url="http://buildroot.uclibc.org/downloads/"></ulink>下载最近的一个稳定版本，<emphasis>buildroot</emphasis>是按日期发布的，所以很容易找到最新的版本，这里我们下载<ulink url="http://buildroot.uclibc.org/downloads/buildroot-2012.11.tar.bz2"></ulink>接下来解压：
+      <screen>
 <prompt>liunx@ubuntu:~/Work/Buildroot/dl$ </prompt><userinput>tar -xf buildroot-2012.11.tar.bz2 -C ../work/</userinput>
-      由于<emphasis>buildroot</emphasis>本身只是<emphasis>Makefile</emphasis>和<emphasis>patch</emphasis>的集合，本身并没有
-      含有软件的源代码，所以需要下载和编译源代码，因此我们需要满足这些条件才行，<emphasis>buildroot</emphasis>
-      所依赖的软件可以参考这里<ulink url="http://buildroot.uclibc.org/downloads/manual/manual.html#requirement"></ulink>
-      所以请务必确保满足这些以来关系。
+      </screen>
+      由于<emphasis>buildroot</emphasis>本身只是<emphasis>Makefile</emphasis>和<emphasis>patch</emphasis>的集合，本身并没有含有软件的源代码，所以需要下载和编译源代码，因此我们需要满足这些条件才行，<emphasis>buildroot</emphasis>所依赖的软件可以参考这里<ulink url="http://buildroot.uclibc.org/downloads/manual/manual.html#requirement"></ulink>所以请务必确保满足这些以来关系。
     </para>
     <para>
-      <emphasis>第二步</emphasis>配置。<emphasis>buildroot</emphasis>支持多种系统架构，并且包含很多一配置好的模板，
-      其中就有支持<emphasis>x86</emphasis>的模板，我们只需在他的基础上做一些调整即可：
+      <emphasis>第二步</emphasis>配置。<emphasis>buildroot</emphasis>支持多种系统架构，并且包含很多一配置好的模板，其中就有支持<emphasis>x86</emphasis>的模板，我们只需在他的基础上做一些调整即可：
       <screen>
 <prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11$ </prompt><userinput>make help</userinput>
 Cleaning:
@@ -288,33 +231,38 @@ See docs/README, or generate the Buildroot manual for further details
       <screen>
 <prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11$ </prompt><userinput>make qemu_x86_defconfig</userinput>
 mkdir -p /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config/lxdialog
-make CC="/usr/bin/gcc" HOSTCC="/usr/bin/gcc" obj=/home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config -C support/kconfig -f Makefile.br conf
+make CC="/usr/bin/gcc" HOSTCC="/usr/bin/gcc" obj=/home/liunx/Work/Buildroot/work/buildroot-2012.11
+/output/build/buildroot-config -C support/kconfig -f Makefile.br conf
 make[1]: 正在进入目录 `/home/liunx/Work/Buildroot/work/buildroot-2012.11/support/kconfig'
-/usr/bin/gcc -DCURSES_LOC="&lt;ncurses.h&gt;" -DLOCALE  -I/home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config  -MM *.c &gt; /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config/.depend 2&gt;/dev/null || :
+/usr/bin/gcc -DCURSES_LOC="&lt;ncurses.h&gt;" -DLOCALE  -I/home/liunx/Work/Buildroot/work/buildroot
+-2012.11/output/build/buildroot-config  -MM *.c &gt; /home/liunx/Work/Buildroot/work/buildroot-2012
+.11/output/build/buildroot-config/.depend 2&gt;/dev/null || :
 make[1]:正在离开目录 `/home/liunx/Work/Buildroot/work/buildroot-2012.11/support/kconfig'
 make[1]: 正在进入目录 `/home/liunx/Work/Buildroot/work/buildroot-2012.11/support/kconfig'
-/usr/bin/gcc -DCURSES_LOC="&lt;ncurses.h&gt;" -DLOCALE  -I/home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config   -c conf.c -o /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config/conf.o
-/usr/bin/gcc -DCURSES_LOC="&lt;ncurses.h&gt;" -DLOCALE  -I/home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config  -I. -c /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config/zconf.tab.c -o /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config/zconf.tab.o
-/usr/bin/gcc -DCURSES_LOC="&lt;ncurses.h&gt;" -DLOCALE  -I/home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config   /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config/conf.o /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config/zconf.tab.o  -o /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config/conf
+/usr/bin/gcc -DCURSES_LOC="&lt;ncurses.h&gt;" -DLOCALE  -I/home/liunx/Work/Buildroot/work/buildroot
+-2012.11/output/build/buildroot-config   -c conf.c -o /home/liunx/Work/Buildroot/work/buildroot-201
+2.11/output/build/buildroot-config/conf.o
+/usr/bin/gcc -DCURSES_LOC="&lt;ncurses.h&gt;" -DLOCALE  -I/home/liunx/Work/Buildroot/work/buildroot
+-2012.11/output/build/buildroot-config  -I. -c /home/liunx/Work/Buildroot/work/buildroot-2012.11/ou
+tput/build/buildroot-config/zconf.tab.c -o /home/liunx/Work/Buildroot/work/buildroot-2012.11/output
+/build/buildroot-config/zconf.tab.o
+/usr/bin/gcc -DCURSES_LOC="&lt;ncurses.h&gt;" -DLOCALE  -I/home/liunx/Work/Buildroot/work/buildroot
+-2012.11/output/build/buildroot-config   /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/b
+uild/buildroot-config/conf.o /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildro
+ot-config/zconf.tab.o  -o /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-
+config/conf
 rm /home/liunx/Work/Buildroot/work/buildroot-2012.11/output/build/buildroot-config/zconf.tab.c
 make[1]:正在离开目录 `/home/liunx/Work/Buildroot/work/buildroot-2012.11/support/kconfig'
 #
 # configuration written to /home/liunx/Work/Buildroot/work/buildroot-2012.11/.config
 #
       </screen>
-      生成默认配置了，接下来我们要做一些定制了。首先定制一下<emphasis>toolchain</emphasis>，默认的工具链
-      支持的功能较少，比如不支持<emphasis>C++</emphasis>，所以为了以后能编译更多的软件，我们尽量打开所有
-      的功能，因为<emphasis>buildroot</emphasis>会自动编译工具链的，而这个编译又很费时间，所以我们最好是
-      一次成型。
+      生成默认配置了，接下来我们要做一些定制了。首先定制一下<emphasis>toolchain</emphasis>，默认的工具链支持的功能较少，比如不支持<emphasis>C++</emphasis>，所以为了以后能编译更多的软件，我们尽量打开所有的功能，因为<emphasis>buildroot</emphasis>会自动编译工具链的，而这个编译又很费时间，所以我们最好是一次成型。
     <imageobject>
-      <imagedata align="left" width="10in" format="PNG"
+      <imagedata align="left" width="6in" format="PNG"
         fileref="../images/buildroot-toolchain.png"/>
     </imageobject>
-    注意红色区域，这里是重点，当然一些杂七杂八的东西你也可以勾选，但要记住，“宁可错杀一千，不可放过一个”！
-    接下来定制软件包，默认配置的软件包很少，这里我们要添加一些网络相关的软件包。进入<emphasis>Package Selection
-      for the target</emphasis>，然后勾选<emphasis>Show package that are also provided by busbox</emphasis>，
-    因为<emphasis>busybox</emphasis>的替代功能有限，还是用原装的好。进入<emphasis>Networking applications</emphasis>
-    这里，我们根据需要选择一些应用程序即可。
+    注意红色区域，这里是重点，当然一些杂七杂八的东西你也可以勾选，但要记住，“宁可错杀一千，不可放过一个”！接下来定制软件包，默认配置的软件包很少，这里我们要添加一些网络相关的软件包。进入<emphasis>Package Selectionfor the target</emphasis>，然后勾选<emphasis>Show package that are also provided by busbox</emphasis>，因为<emphasis>busybox</emphasis>的替代功能有限，还是用原装的好。进入<emphasis>Networking applications</emphasis>这里，我们根据需要选择一些应用程序即可。
     </para>
     <para>
       还有一个细节的地方需要修改，我们需要系统将信息输出到串口，这样方便使用，所以我们将
@@ -322,14 +270,10 @@ make[1]:正在离开目录 `/home/liunx/Work/Buildroot/work/buildroot-2012.11/su
         <guimenu>System configuration</guimenu>
         <guimenuitem>Port to run a getty (login prompt) on</guimenuitem>
       </menuchoice>
-      的<emphasis>tty1</emphasis>改为<emphasis>ttyS0</emphasis>，这样我们可以充分利用<emphasis>qemu</emphasis>
-      的<emphasis>-nographic</emphasis>选项，直接在终端里显示，而不产生麻烦的窗口界面了，毕竟我们的设备
-      没有图像界面，使用窗口显示真是很麻烦的。
+      的<emphasis>tty1</emphasis>改为<emphasis>ttyS0</emphasis>，这样我们可以充分利用<emphasis>qemu</emphasis>的<emphasis>-nographic</emphasis>选项，直接在终端里显示，而不产生麻烦的窗口界面了，毕竟我们的设备没有图像界面，使用窗口显示真是很麻烦的。
     </para>
     <para>
-      最后，保存配置，退出，然后<command>make</command>，耐心等待吧，如果网络顺畅，电脑给力的话，
-      一个小时内应该可以解决战斗的。<emphasis>buildroot</emphasis>会自动根据你的电脑CPU核心数来
-      分配线程的，充分利用资源，其实花时间的地方源于下载代码，这里要看你的网络情况了。
+      最后，保存配置，退出，然后<command>make</command>，耐心等待吧，如果网络顺畅，电脑给力的话，一个小时内应该可以解决战斗的。<emphasis>buildroot</emphasis>会自动根据你的电脑CPU核心数来分配线程的，充分利用资源，其实花时间的地方源于下载代码，这里要看你的网络情况了。
     </para>
     <para>
       编译完成后，生成的镜像在<filename>output/images</filename>目录。
