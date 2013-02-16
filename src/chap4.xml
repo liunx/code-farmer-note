@@ -313,6 +313,7 @@ lo        Link encap:Local Loopback
       可以看到，5块网络赫然在目。
     </para>
     <qandaset defaultlabel='qanda'>
+      <qandaentry>
       <question>
         <para>
           妈呀，<emphasis>qemu</emphasis>退不出来了！坑爹啊这是？！
@@ -324,6 +325,7 @@ lo        Link encap:Local Loopback
           保管行！
         </para>
       </answer>
+      </qandaentry>
     </qandaset>
     <section>
       <title>lan侧桥接设置</title>
