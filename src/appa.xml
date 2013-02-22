@@ -1,6 +1,46 @@
 <appendix xml:id="appa" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
   xmlns:xlink='http://www.w3.org/1999/xlink'>
-  <title>APPA</title>
+  <title>常见问题FAQ</title>
   <para>
-  我的第一个章节</para>
+    这里，我们列出了常见问题和解决办法。减轻大家重复的劳动。
+  </para>
+  <section>
+    <title>openwrt pppd 段错误</title>
+    <para>
+    如果出现<quote>root@OpenWrt:/# [   15.761824] pppd[1456]: segfault at 0 ip 08065f90 sp bf8dc9f0 error 4 in pppd[8048000+3b000]</quote>的提示，那么我们需要修改<filename>/etc/ppp/options.xl2tpd</filename>文件。
+    </para>
+    <screen>
+<prompt>root@OpenWrt:/etc/ppp# </prompt><userinput>cat /etc/ppp/options.xl2tpd</userinput>
+#
+
+lock
+auth
+
+debug
+# We MUST cancel dump, or we'll get segfault
+<emphasis>
+#dump
+</emphasis>
+# CCP seems to confuse Android clients, better turn it off
+noccp
+novj
+novjccomp
+nopcomp
+noaccomp
+require-mschap
+require-mschap-v2
+ms-dns 172.17.2.1
+lcp-echo-interval 120
+lcp-echo-failure 10
+idle 1800
+connect-delay 5000
+nodefaultroute
+noipdefault
+
+proxyarp
+mtu 1400
+mru 1400
+    </screen>
+    <para>这里我们注释掉<quote>dump</quote>选项即可。</para>
+  </section>
 </appendix>
