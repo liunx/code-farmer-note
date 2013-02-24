@@ -37,7 +37,7 @@
       <listitem>snapshots</listitem>
       <listitem>attitude_adjustment</listitem>
     </orderedlist>
-    <emphasis>backfire</emphasis>和<emphasis>kamikaze</emphasis>属于两个稳定的分支，正常使用没有太大问题，<emphasis>attitude_adjustment</emphasis>则是最近的稳定版本，这里我们可以使用他们的<emphasis>x86</emphasis>版本，但是这里我们选择<emphasis>snapshots</emphasis>版本，虽然快照版本相对来说不是很稳定，但是代码更新很快，内核版本，软件包也更新，其实快照版本就是用来给大家测试用的，以便获取<emphasis>Bug</emphasis>的反馈，增强系统的稳定性，所以，本着参与的目的，我们选择<emphasis>snapshots</emphasis>版本，如果有问题的话，我们还可以反馈一些内容了。<emphasis>但是，需要注意的是，由于这是个快照版本，内核模块重新编译的话，是使得安装内核模块时失败</emphasis>，还好整个系统不是很大，我们只要及时跟新镜像就是了，而且也用不到所有的软件包的，所以够用了。
+    <emphasis>backfire</emphasis>和<emphasis>kamikaze</emphasis>属于两个稳定的分支，正常使用没有什么问题，就是版本比较老了，相应的软件包也比较老，<emphasis>attitude_adjustment</emphasis>则是最近的稳定版本，这里我们可以使用他们的<emphasis>x86</emphasis>版本，但是这里我们选择<emphasis>snapshots</emphasis>版本，虽然快照版本相对来说不是很稳定，但是代码更新很快，内核版本，软件包也更新，其实快照版本就是用来给大家测试用的，以便获取错误信息的反馈，增强系统的稳定性，所以，本着参与的目的，我们选择<emphasis>snapshots</emphasis>版本，如果有问题的话，我们还可以反馈一些内容了。<emphasis>但是，需要注意的是，由于这是个快照版本，内核模块重新编译的话，是使得安装内核模块时失败</emphasis>，还好整个系统不是很大，我们只要及时跟新镜像就是了，而且也用不到所有的软件包的，所以够用了。
     <para>
       接下来，我们进入<emphasis>snapshots</emphasis>目录，下载镜像。
     <imageobject>
@@ -283,5 +283,17 @@ make[1]:正在离开目录 `/home/liunx/Work/Buildroot/work/buildroot-2012.11/su
 bzImage  rootfs.ext2
       </screen>
     </para>
+  </section>
+  <section>
+    <title>补充信息</title>
+    <section>
+      <title>使用attitude_adjustment版本</title>
+      <para>使用<emphasis>snapshots</emphasis>版本有时会很麻烦，那就是快照版本更新得太快了，一天一次，这个对于用户层的软件没有太大的问题，因为内核的接口是很稳定的，但是内核模块则会受到影响，我们下载当天的镜像，第二天再安装需要的内核模块时，我们会安装失败，这样又要下载新的镜像，重新配置了，很麻烦，所以可以选择<emphasis>attitude_adjustment</emphasis>版本，这个版本是最近的稳定版本，但请注意，不一定是最终版本，包含有<emphasis>beta</emphasis>版本和<emphasis>rc</emphasis>候选版本。</para>
+    <imageobject>
+      <imagedata align="left" width="6in" format="PNG"
+        fileref="../images/attitude_adjustment.png"/>
+    </imageobject>
+    <para>这里我们选择<emphasis>12.09-rc1</emphasis>，最近的<emphasis>rc</emphasis>候选版本即可。</para>
+    </section>
   </section>
 </chapter>
