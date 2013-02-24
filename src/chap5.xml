@@ -60,8 +60,7 @@
         <imagedata align="right" width="6in" format="PNG"
           fileref="../images/simple-firewall.png"/>
       </imageobject>
-      黄色的部分是通过<emphasis>vde_switch</emphasis>和<emphasis>slirpvde</emphasis>模拟的交换机网络，这里<emphasis>slirpvde</emphasis>起到分配<emphasis>IP地址</emphasis>的作用。红色部分就是我们的男主角<quote>老章</quote>了，蓝色部分就是由<emphasis>openwrt</emphasis>友情出演的<emphasis>wan</emphasis>
-      侧主机和<emphasis>lan</emphasis>侧主机。
+      黄色的部分是通过<emphasis>vde_switch</emphasis>和<emphasis>slirpvde</emphasis>模拟的交换机网络，这里<emphasis>slirpvde</emphasis>起到分配<emphasis>IP地址</emphasis>的作用。红色部分就是我们的男主角<quote>老章</quote>了，蓝色部分就是由<emphasis>openwrt</emphasis>友情出演的<emphasis>wan</emphasis>侧主机和<emphasis>lan</emphasis>侧主机。
       </para>
       <para>
         好，所有演员就位了，该是介绍剧情的时候了，我们的剧情很简单，那就是
@@ -108,9 +107,15 @@ set -o nounset                              # Treat unset variables as an error
       </screen>
       <para>
         好，运行这个脚本，让我们看看我们的模拟交换机网络是否工作正常：
+      </para>
         <screen>
 <prompt>liunx@ubuntu:~/Work/OpenWrt/work/x86$ </prompt><userinput>./wanPC.sh</userinput>
         </screen>
+        <tip>
+          <title>qemu vnc 端口号</title>
+          <para>关于<emphasis>qemu</emphasis>vnc端口号的设置，端口号 = 5900 +  定制的数字，例如<quote>-vnc :53</quote>，那么我们访问的<emphasis>vnc</emphasis>端口号就是<emphasis>5953</emphasis>。</para>
+        </tip>
+        <para>
         哎呀，啥输出都没有，但其实我们的<emphasis>qemu</emphasis>已经在后台悄悄地运行了！
         这里我们打开<emphasis>vnc</emphasis>来看看究竟。
         <screen>
