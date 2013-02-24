@@ -35,8 +35,9 @@
       <listitem>backfire</listitem>
       <listitem>kamikaze</listitem>
       <listitem>snapshots</listitem>
+      <listitem>attitude_adjustment</listitem>
     </orderedlist>
-    <emphasis>backfire</emphasis>和<emphasis>kamikaze</emphasis>属于连个稳定的分支，正常使用没有太大问题，这里我们可以使用他们的<emphasis>x86</emphasis>版本，但是这里我们选择<emphasis>snapshots</emphasis>版本，虽然快照版本相对来说不是很稳定，但是代码更新很快，内核版本，软件包也更新，其实快照版本就是用来给大家测试用的，以便获取<emphasis>Bug</emphasis>的反馈，增强系统的稳定性，所以，本着参与的目的，我们选择<emphasis>snapshots</emphasis>版本，如果有问题的话，我们还可以反馈一些内容了。<emphasis>但是，需要注意的是，由于这是个快照版本，内核模块重新编译的话，是使得安装内核模块时失败</emphasis>，还好整个系统不是很大，我们只要及时跟新镜像就是了，而且也用不到所有的软件包的，所以够用了。
+    <emphasis>backfire</emphasis>和<emphasis>kamikaze</emphasis>属于两个稳定的分支，正常使用没有太大问题，<emphasis>attitude_adjustment</emphasis>则是最近的稳定版本，这里我们可以使用他们的<emphasis>x86</emphasis>版本，但是这里我们选择<emphasis>snapshots</emphasis>版本，虽然快照版本相对来说不是很稳定，但是代码更新很快，内核版本，软件包也更新，其实快照版本就是用来给大家测试用的，以便获取<emphasis>Bug</emphasis>的反馈，增强系统的稳定性，所以，本着参与的目的，我们选择<emphasis>snapshots</emphasis>版本，如果有问题的话，我们还可以反馈一些内容了。<emphasis>但是，需要注意的是，由于这是个快照版本，内核模块重新编译的话，是使得安装内核模块时失败</emphasis>，还好整个系统不是很大，我们只要及时跟新镜像就是了，而且也用不到所有的软件包的，所以够用了。
     <para>
       接下来，我们进入<emphasis>snapshots</emphasis>目录，下载镜像。
     <imageobject>
