@@ -1,4 +1,8 @@
 <chapter xml:id="chapter7" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
   xmlns:xlink='http://www.w3.org/1999/xlink'>
   <title>虚拟私有网络</title>
+  <para>虚拟私有网络就是我们常说的<emphasis>VPN</emphasis>，如果你对<emphasis>VPN</emphasis>一无所知的话，那么我们打一个简单的比方就是--<quote>深入敌人内部</quote>。显然，在<quote>敌人内部</quote>，我们就需要特殊的渠道进行情报交流了，这个渠道就是<quote>IPSec</quote>和<quote>l2tp</quote>了，并且两者需要配置使用才能发挥最大的功效。<quote>IPSec</quote>用来对数据进行加密，<quote>l2tp</quote>则用来建立通道。</para>
+  <section>
+    <title>L2TP连接</title>
+  </section>
 </chapter>
