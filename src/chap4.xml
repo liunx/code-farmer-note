@@ -343,9 +343,8 @@ lo        Link encap:Local Loopback
         好，编译成功并不意味着lan侧桥接就搞定了，我们还要添加相关的启动脚本和配置文件。
       </para>
       <section>
-        <title>添加<emphasis>vde wire</emphasis></title>
-        <para>
-          上文中我们说到组装<quote>老章</quote>的躯体，虽然网卡装上了，但是却没有没有和外界联系的接口，显然是个<quote>中看不中用</quote>的货色，这怎么行呢？那么，我们需要给他提供一个和外部链接的线了：
+        <title>添加vde连接</title>
+        <para>上文中我们说到组装<quote>老章</quote>的躯体，虽然网卡装上了，但是却没有没有和外界联系的接口，显然是个<quote>中看不中用</quote>的货色，这怎么行呢？那么，我们需要给他提供一个和外部连接的线了：
           <screen>
 <prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images$ </prompt><userinput>cat boot.sh</userinput>
 #!/bin/bash -
@@ -434,6 +433,9 @@ lib/scripts/bridge
           </screen>
           看，我们做了个符号连接，他就是用到这里！
         </para>
+          <warning>
+            <para>以上脚本运行在<emphasis>buildroot</emphasis>系统中，而不是主机系统里，亲，别放错地方！</para>
+          </warning>
       </section>
       <section>
         <title>配置<emphasis>interfaces</emphasis></title>
@@ -452,14 +454,13 @@ address 192.168.1.1
 netmask 255.255.255.0
 broadcast 192.168.1.255
           </screen>
-          这里桥接我们设置成静态的啦，原因你懂得。
+          这里桥接我们设置成静态的啦，因为对于<emphasis>lan侧</emphasis>的<emphasis>PC</emphasis>，我们的<emphasis>路由器</emphasis>必须提供一个固定的地址来进行访问才行。
         </para>
       </section>
       <section>
         <title>配置<emphasis>dnsmasq</emphasis></title>
         <para>
-          桥接接口总算是设置好了，可是，客户如何从路由器<emphasis>lan侧</emphasis>获取<emphasis>IP</emphasis>呢？显然，还是需要<quote>自己动手，丰衣足食</quote>了，那么就让<emphasis>dnsmasq</emphasis>登场
-          了。
+          桥接接口总算是设置好了，可是，客户如何从路由器<emphasis>lan侧</emphasis>获取<emphasis>IP</emphasis>呢？显然，还是需要<quote>自己动手，丰衣足食</quote>了，那么就该<emphasis>dnsmasq</emphasis>登场了。
           <screen>
 <prompt># </prompt><userinput>cat /etc/dnsmasq.conf</userinput>
 
@@ -484,8 +485,7 @@ no-dhcp-interface=eth1 eth2
 address=/buildroot.lan/192.168.1.1
 ptr-record=1.1.168.192.in-addr.arpa,buildroot.lan
           </screen>
-          唉，有了配置文件<emphasis>dnsmasq</emphasis>也没有长腿自己跑，我们还要给他添加一个自动运行的
-          脚本：
+          哎，虽然有了配置文件，但是<emphasis>dnsmasq</emphasis>自己也没有长腿，我们还要给他添加一个自动运行的脚本：
           <screen>
 <prompt># </prompt><userinput>cat /etc/init.d/S50dnsmasq</userinput>
 
@@ -516,7 +516,10 @@ esac
 
 exit $?
           </screen>
-          最好要强调的是，一定要给他加上<emphasis>可执行权限</emphasis>哦！
+          最后要强调的是，一定要给他加上<emphasis>可执行权限</emphasis>哦！
+          <screen>
+<prompt># </prompt><userinput>chmod +x /etc/init.d/S50dnsmasq</userinput>
+          </screen>
         </para>
       </section>
     </section>
@@ -557,5 +560,58 @@ udhcpc: setting default routers: 192.168.1.1
         哈，成功了！
       </para>
     </section>
+  </section>
+  <section>
+    <title>补充信息</title>
+    <section>
+      <title>定制脚本安装器</title>
+    <para>事情总是不完美的，但是我们还是尽善尽美的好。我们给<emphasis>buildroot</emphasis>添加了那么多脚本文件，但是我们却不知道如何保存这些文件，当我们重新编译<emphasis>buildroot</emphasis>时，一切努力都付之一炬了，所以我们可以创建一个脚本帮我们干这件事。</para>
+    <screen>
+<prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images$ </prompt><userinput>tree custom/</userinput>
+custom/
+├── dnsmasq.conf
+├── firewall
+├── install.sh
+├── interfaces
+├── S50dnsmasq
+├── scripts
+│   └── bridge
+└── switch.sh
+
+1 directory, 7 files
+<prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images$ </prompt><userinput>cat custom/install.sh</userinput>
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
+
+ROOTFS=../rootfs
+IMAGE=../rootfs.ext2
+
+echo "mounting $IMAGE..."
+mount $IMAGE $ROOTFS -o loop
+
+install -m 600 dnsmasq.conf $ROOTFS/etc/
+install -m 600 interfaces $ROOTFS/etc/network/
+mkdir -p $ROOTFS/usr/lib/scripts
+install -m 755 scripts/bridge $ROOTFS/usr/lib/scripts/
+ln -fs /usr/lib/scripts/bridge  $ROOTFS/etc/network/if-pre-up.d/
+ln -fs /usr/lib/scripts/bridge  $ROOTFS/etc/network/if-post-down.d/
+install -m 755 S50dnsmasq $ROOTFS/etc/init.d/
+install -m 755 firewall $ROOTFS/etc/init.d/S60firewall
+
+#echo "umount $IMAGE... (Y/N)"
+#read ANSWER
+umount $ROOTFS
+echo "complete!"
+
+<prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images$ </prompt><userinput>cd custom/</userinput>
+<prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images/custom$ </prompt><userinput>sudo ./install.sh</userinput>
+[sudo] password for liunx:
+mounting ../rootfs.ext2...
+complete!
+    </screen>
+    <warning>
+      <para>亲，请注意脚本中的参数变量，根据自己保存文件的具体位置来设置！</para>
+    </warning>
+  </section>
   </section>
 </chapter>
