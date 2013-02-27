@@ -9,7 +9,7 @@ SERVICE_USE_PID=1
 start() {
 	mkdir -m 0700 -p /var/racoon
 	[ -f /etc/ipsec-tools.conf ] && /usr/sbin/setkey -f /etc/ipsec-tools.conf
-	service_start /usr/sbin/racoon -f /etc/racoon.conf
+	service_start /usr/sbin/racoon -f /etc/racoon.conf -l /var/log/racoon.log
 }
 
 stop() {
