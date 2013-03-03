@@ -2,3 +2,5 @@
 *.html
 *.fo
 *.pdf
+*.img
+*vmlinuz
