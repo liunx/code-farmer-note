@@ -4,7 +4,8 @@
 
 TARGETS = routerDIY.html routerDIY.pdf
 XMLS = routerDIY.xml chap1.xml chap2.xml chap3.xml chap4.xml \
-       chap5.xml chap6.xml chap7.xml appa.xml bibliography.xml
+       chap5.xml chap6.xml chap7.xml chap8.xml appa.xml \
+       bibliography.xml
 
 XSLTPROC = /usr/bin/xsltproc
 FOP = /usr/bin/fop
