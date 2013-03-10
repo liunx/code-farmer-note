@@ -4,5 +4,55 @@
   <para>虚拟私有网络就是我们常说的<emphasis>VPN</emphasis>，如果你对<emphasis>VPN</emphasis>一无所知的话，那么我们打一个简单的比方就是--<quote>深入敌人内部</quote>。显然，在<quote>敌人内部</quote>，我们就需要特殊的渠道进行情报交流了，这个渠道就是<quote>IPSec</quote>和<quote>l2tp</quote>了，并且两者需要配置使用才能发挥最大的功效。<quote>IPSec</quote>用来对数据进行加密，<quote>l2tp</quote>则用来建立通道。</para>
   <section>
     <title>L2TP连接</title>
+    <para>其实，通过<emphasis>l2tp</emphasis>服务，我们就可以建立<emphasis>VPN</emphasis>通道了，但是由于<emphasis>l2tp</emphasis>没有加密，所以我们的通信是暴露的，很容易被窃取的，所以有安全风险的，但是实验中我们可以通过<emphasis>l2tp</emphasis>来了解<emphasis>VPN</emphasis>究竟是如何工作的。</para>
+    <section>
+      <title>准备工作</title>
+      <para>搭建基于<emphasis>l2tp</emphasis>的VPN连接，我们需要至少一个服务端 -- 拥有公共的地址，和一个客户端来创建连接。网络拓扑图如下：</para>
+    <imageobject>
+      <imagedata align="left" width="6in" format="PNG"
+        fileref="../images/chap7-l2tp.png"/>
+    </imageobject>
+    <para>从图中可以看出，私有网络A和B是两个独立的内部网络，无法互访，这时，我们需要通过<emphasis>VPN</emphasis>来让他们实现互访，这样，无论两个网络在物理上相隔万水千山，但在实际通信中确实近在咫尺，这也就是<emphasis>VPN</emphasis>的作用之所在了。</para>
+    <para>好，接下来，让我们看看如何把我们的<emphasis>buildroot</emphasis>的系统，改造成<emphasis>l2tp</emphasis>服务器吧</para>
+    <section>
+      <title>配置内核</title>
+      <para>首先，让我们配置内核，<emphasis>linux</emphasis>支持<emphasis>l2tp</emphasis>协议的，但是这里我们使用的是<emphasis>xl2tpd</emphasis>，他没有使用<emphasis>linux</emphasis>的内核模块，而是把协议处理做到了<emphasis>用户空间</emphasis>，然而我们最终需要<emphasis>ppp</emphasis>完成拨号连接，而<emphasis>pppd</emphasis>需要内核模块的支持，所以<quote>Let's do it!</quote></para>
+      <screen>
+Device Drivers  --->
+    [*] Network device support  --->
+        [*]   PPP (point-to-point protocol) support             
+        [*]     PPP support for async serial ports              
+      </screen>
+      <para>我们至少打开这两个选项就可以了，其他的选项以后也许用得着。</para>
+    </section>
+    <section>
+      <title>配置l2tp</title>
+      <para>服务端我们采用<emphasis>buildroot</emphasis>，配置文件如下：</para>
+      <screen>
+<prompt># </prompt><userinput>cat /etc/xl2tpd/xl2tpd.conf</userinput>
+
+[global]
+port = 1701
+auth file = /etc/xl2tpd/xl2tp-secrets
+access control = no
+
+[lns default]
+exclusive = yes
+ip range = 112.168.254.202-112.168.254.210
+hidden bit = no
+local ip = 112.168.254.200
+length bit = yes
+;require authentication = yes
+name = VersaLink
+;ppp debug = yes
+pppoptfile = /etc/ppp/options.xl2tpd
+
+      </screen>
+      <para><emphasis>openwrt</emphasis>作为客户端，配置如下：</para>
+    </section>
+    <section>
+      <title>配置PPP</title>
+    </section>
+    </section>
   </section>
 </chapter>
