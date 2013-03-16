@@ -26,11 +26,17 @@ Device Drivers  --->
       <para>我们至少打开这两个选项就可以了，其他的选项以后也许用得着。</para>
     </section>
     <section>
-      <title>配置l2tp</title>
+      <title>配置l2tp服务端</title>
+      <para>首先选取<emphasis>xl2tpd</emphasis>软件包和<emphasis>ppp</emphasis>包：</para>
+      <screen>
+Package Selection for the target  --->
+    Networking applications  --->
+        [*] pppd   
+        [*] xl2tp
+      </screen>
       <para>服务端我们采用<emphasis>buildroot</emphasis>，配置文件如下：</para>
       <screen>
 <prompt># </prompt><userinput>cat /etc/xl2tpd/xl2tpd.conf</userinput>
-
 [global]
 port = 1701
 auth file = /etc/xl2tpd/xl2tp-secrets
@@ -47,12 +53,156 @@ name = VersaLink
 ;ppp debug = yes
 pppoptfile = /etc/ppp/options.xl2tpd
 
+<prompt># </prompt><userinput>cat /etc/ppp/options.xl2tpd</userinput>
+#
+
+lock
+noauth
+debug
+#dump
+logfd 2
+logfile /var/log/xl2tpd.log
+noccp
+novj
+novjccomp
+nopcomp
+noaccomp
+
+<prompt># </prompt><userinput>cat /etc/ppp/chap-secrets</userinput>
+#USERNAME  PROVIDER  PASSWORD  IPADDRESS
+admin           *       admin           *
       </screen>
-      <para><emphasis>openwrt</emphasis>作为客户端，配置如下：</para>
     </section>
     <section>
-      <title>配置PPP</title>
+      <title>配置l2tp客户端</title>
+      <para>客户端由<emphasis>openwrt</emphasis>友情出演，上配置文件：</para>
+      <screen>
+<prompt>root@OpenWrt:/# </prompt><userinput>cat /etc/xl2tpd/xl2tpd.conf</userinput>
+[global]
+port = 1701
+auth file = /etc/xl2tpd/xl2tp-secrets
+access control = no
+
+;[lns default]
+;exclusive = yes
+;ip range = 192.168.254.202-192.168.254.210
+;lac = 10.0.1.2
+;hidden bit = no
+;local ip = 192.168.254.200
+;length bit = yes
+;refuse authentication = yes
+;name = VersaLink
+;ppp debug = yes
+;pppoptfile = /etc/ppp/options.xl2tpd
+
+[lac left]
+lns = 10.0.2.16
+require authentication = yes
+name = VersaLink
+;ppp debug = yes
+pppoptfile = /etc/ppp/options.xl2tpd
+
+<prompt>root@OpenWrt:/# </prompt><userinput>cat /etc/ppp/options.xl2tpd</userinput>
+#
+
+name admin
+password admin
+lock
+noauth
+debug
+#dump
+logfd 2
+logfile /var/log/xl2tpd.log
+noccp
+novj
+novjccomp
+nopcomp
+noaccomp
+
+      </screen>
+      <warning>注意，<emphasis>lns</emphasis>就是客户端将要连接的服务端地址，这里根据实际情况填写，请勿<quote>生搬硬套</quote>，而是<quote>照猫画虎</quote>，变通一下才对！</warning>
     </section>
     </section>
+    <section>
+      <title>开始实验！</title>
+      <para>好了，准备工作完成了，下面开始实验了，你准备好了吗？</para>
+      <para>首先让我们打开服务端：</para>
+      <screen>
+<prompt># </prompt><userinput>mkdir /var/run/xl2tpd</userinput>
+<prompt># </prompt><userinput>mknod /dev/ppp c 108 0</userinput>
+<prompt># </prompt><userinput>xl2tpd -D &amp;</userinput>
+# xl2tpd[113]: setsockopt recvref[30]: Protocol not available
+xl2tpd[113]: This binary does not support kernel L2TP.
+xl2tpd[113]: xl2tpd version xl2tpd-1.3.1 started on buildroot PID:113
+xl2tpd[113]: Written by Mark Spencer, Copyright (C) 1998, Adtran, Inc.
+xl2tpd[113]: Forked by Scott Balmos and David Stipp, (C) 2001
+xl2tpd[113]: Inherited by Jeff McAdams, (C) 2002
+xl2tpd[113]: Forked again by Xelerance (www.xelerance.com) (C) 2006
+xl2tpd[113]: Listening on IP address 0.0.0.0, port 1701
+      </screen>
+      <para>这里，我们首先创建<emphasis>/var/run/xl2tpd</emphasis>目录，然后创建<emphasis>/dev/ppp</emphasis>设备节点，最后以调试模式运行。</para>
+      <para>接下来创建连接：</para>
+      <screen>
+<prompt>root@OpenWrt:/# </prompt><userinput>/etc/init.d/xl2tpd restart</userinput>
+<prompt>root@OpenWrt:/# </prompt><userinput>echo "c left" > /var/run/xl2tpd/l2tp-control</userinput>
+<prompt>root@OpenWrt:/# </prompt><userinput>ifconfig</userinput>
+eth0      Link encap:Ethernet  HWaddr 12:34:56:78:1A:00
+          inet addr:10.0.2.16  Bcast:10.0.2.255  Mask:255.255.255.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:4261 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:4304 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:267068 (260.8 KiB)  TX bytes:261204 (255.0 KiB)
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          UP LOOPBACK RUNNING  MTU:16436  Metric:1
+          RX packets:20 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:20 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:3160 (3.0 KiB)  TX bytes:3160 (3.0 KiB)
+
+ppp0      Link encap:Point-to-Point Protocol
+          inet addr:112.168.254.202  P-t-P:112.168.254.200  Mask:255.255.255.255
+          UP POINTOPOINT RUNNING NOARP MULTICAST  MTU:1500  Metric:1
+          RX packets:3 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:3 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:3
+          RX bytes:30 (30.0 B)  TX bytes:30 (30.0 B)
+      </screen>
+      <para><emphasis>openwrt</emphasis>有自启动脚本，所以用起来比较方便一点，如果看到<emphasis>ppp0</emphasis>了，那么我们的连接就创建成功了！</para>
+      <para>接下来让我们看看服务端有哪些反映吧：</para>
+      <screen>
+# xl2tpd[113]: control_finish: Peer requested tunnel 12405 twice, ignoring second one.
+xl2tpd[113]: Connection established to 10.0.2.16, 1701.  Local: 43197, Remote: 12405 (ref=0/0).
+LNS session is 'default'
+xl2tpd[113]: control_finish: Warning: Peer did not specify transmit speed
+xl2tpd[113]: start_pppd: I'm running:
+xl2tpd[113]: "/usr/sbin/pppd"
+xl2tpd[113]: "passive"
+xl2tpd[113]: "nodetach"
+xl2tpd[113]: "112.168.254.200:112.168.254.202"
+xl2tpd[113]: "name"
+xl2tpd[113]: "VersaLink"
+xl2tpd[113]: "file"
+xl2tpd[113]: "/etc/ppp/options.xl2tpd"
+xl2tpd[113]: "ipparam"
+xl2tpd[113]: "10.0.2.16"
+xl2tpd[113]: "/dev/pts/0"
+xl2tpd[113]: Call established with 10.0.2.16, Local: 14252, Remote: 62314, Serial: 1
+
+<prompt># </prompt><userinput>ifconfig ppp0</userinput>
+ppp0      Link encap:Point-to-Point Protocol
+          inet addr:112.168.254.200  P-t-P:112.168.254.202  Mask:255.255.255.255
+          UP POINTOPOINT RUNNING NOARP MULTICAST  MTU:1500  Metric:1
+          RX packets:3 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:3 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:3
+          RX bytes:30 (30.0 B)  TX bytes:30 (30.0 B)
+      </screen>
+    </section>
+  </section>
+  <section>
+    <title>创建IPSEC连接</title>
   </section>
 </chapter>
