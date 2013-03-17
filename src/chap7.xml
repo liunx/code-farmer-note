@@ -204,5 +204,115 @@ ppp0      Link encap:Point-to-Point Protocol
   </section>
   <section>
     <title>创建IPSEC连接</title>
+    <para><emphasis>ipsec</emphasis>常见的软件有<emphasis>ipsec-tools</emphasis>、<emphasis>openswan</emphasis>、<emphasis>strongswan</emphasis>、<emphasis>openvpn</emphasis>等，这里我们先来介绍一下如何使用<emphasis>ipsec-tools</emphasis>来搭建<emphasis>ipsec</emphasis>连接。</para>
+    <section>
+      <title>准备工作</title>
+      <para>其实一路走过来，大家也总结出一个规律--“先配置内核，再配置用户空间程序”，将协议做到内核中，可以提高效率，充分发挥<emphasis>linux内核</emphasis>作用，所以让我先看看如何启用内核中的<emphasis>ipsec</emphasis>功能吧。</para>
+      <screen>
+[*] Networking support  --->
+    Networking options  --->
+        &lt;*> PF_KEY sockets
+        &lt;M>   IP: ESP transformation
+        &lt;M>   IP: IPsec transport mode
+        &lt;M>   IP: IPsec tunnel mode 
+-*- Cryptographic API  --->
+    {*}   HMAC support                             
+    -*-   CRC32c CRC algorithm                     
+    {*}   MD5 digest algorithm                     
+    {*}   SHA1 digest algorithm                    
+    &lt;*&gt;   Tiger digest algorithms                  
+    -*-   AES cipher algorithms                    
+    {M}   AES cipher algorithms (i586)             
+    &lt;M&gt;   AES cipher algorithms (AES-NI)           
+    &lt;M&gt;   Blowfish cipher algorithm                
+    {M}   DES and Triple DES EDE cipher algorithms 
+      </screen>
+      <para>配置内核我们做了两件事，一是添加协议支持，二是添加加密算法。接下来让我们选取<emphasis>ipsec-tools</emphasis>吧。</para>
+      <screen>
+Package Selection for the target  --->
+    Networking applications  --->
+        [*] ipsec-tools                         
+        [*]   Enable racoonctl(8)               
+        [*]   Enable NAT-Traversal              
+        [*]   Enable IKE fragmentation          
+        [*]   Enable DPD (Dead Peer Detection)  
+        [*]   Enable statistics logging function
+        [*]   Enable readline input support     
+      </screen>
+    </section>
+    <section>
+        <title>配置阶段</title>
+        <para>OK，又到了配置阶段了，闲言少叙，上配置：</para>
+        <screen>
+<prompt># </prompt><userinput>cat /etc/racoon.conf</userinput>
+
+path pre_shared_key "/etc/racoon/psk.txt";
+
+remote 10.0.2.16 {
+        exchange_mode main,aggressive;
+        proposal {
+                encryption_algorithm 3des;
+                hash_algorithm sha1;
+                authentication_method pre_shared_key;
+                dh_group 2;
+        }
+}
+
+sainfo address 172.20.1.0/24 any address 192.168.22.0/24 any {
+        pfs_group 2;
+        lifetime time 1 hour ;
+        encryption_algorithm 3des, blowfish 448, rijndael ;
+        authentication_algorithm hmac_sha1, hmac_md5 ;
+        compression_algorithm deflate ;
+}
+<prompt># </prompt><userinput>cat /etc/racoon/psk.txt</userinput>
+10.0.2.16 123456
+<prompt># </prompt><userinput>cat /etc/ipsec-tools.conf</userinput>
+flush;
+spdflush;
+
+spdadd 172.20.1.0/24 192.168.22.0/24 any -P out ipsec
+           esp/tunnel/172.27.1.165-172.27.1.169/require;
+
+spdadd 192.168.22.0/24 172.20.1.0/24 any -P in ipsec
+           esp/tunnel/172.27.1.169-172.27.1.165/require;
+# 
+<prompt># </prompt><userinput>cat /etc/init.d/S50racoon</userinput>
+#!/bin/sh
+#
+# Start the racoon based ipsec....
+#
+
+start() {
+        mkdir -m 0700 -p /var/racoon
+        [ -f /etc/ipsec-tools.conf ] &amp;&amp; /usr/sbin/setkey -f /etc/ipsec-tools.conf
+        start-stop-daemon -x /usr/sbin/racoon -b -m -p /var/run/racoon.pid -S -- -f /etc/racoon.conf
+}
+
+stop() {
+        start-stop-daemon -x /usr/sbin/racoon -s 2 -p /var/run/racoon.pid -K
+}
+
+case "$1" in
+        start)
+                echo "Starting racoon..."
+                start
+                ;;
+        stop)
+                echo "Stoping racoon..."
+                stop
+                ;;
+        restart|reload)
+                "$0" stop
+                "$0" start
+                ;;
+        *)
+                echo "Usage: $0 {start|stop|restart}"
+                exit 1
+esac
+
+exit $?
+        </screen>
+    </section>
   </section>
 </chapter>
