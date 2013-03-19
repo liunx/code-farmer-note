@@ -1,4 +1,5 @@
 <chapter xml:id="chapter8" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
   xmlns:xlink='http://www.w3.org/1999/xlink'>
   <title>Quality of Service (QOS)</title>
+  <para><emphasis>QOS</emphasis>翻译过来就叫做服务质量，显然，在资源一定的情况下，如何提高服务质量，就是我们本章需要解决的问题。不知大家是否有在宿舍共享上网的痛苦经历，如果有些<quote>不法分子</quote>开启迅雷等下载工具的时候，是否感觉网络异常的慢呢？呵呵，想来确实可气，要是能够对某些不法分子进行惩戒就好了，那么<emphasis>QOS</emphasis>就派上用场了！</para>
 </chapter>
