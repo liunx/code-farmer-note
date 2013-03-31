@@ -2,4 +2,94 @@
   xmlns:xlink='http://www.w3.org/1999/xlink'>
   <title>Quality of Service (QOS)</title>
   <para><emphasis>QOS</emphasis>翻译过来就叫做服务质量，显然，在资源一定的情况下，如何提高服务质量，就是我们本章需要解决的问题。不知大家是否有在宿舍共享上网的痛苦经历，如果有些<quote>不法分子</quote>开启迅雷等下载工具的时候，是否感觉网络异常的慢呢？呵呵，想来确实可气，要是能够对某些不法分子进行惩戒就好了，那么<emphasis>QOS</emphasis>就派上用场了！</para>
+  <section>
+    <title>准备工作</title>
+    <para><emphasis>QOS</emphasis>工作的核心还是<emphasis>linux</emphasis>内核，也就是说网络资源分配的执行终端就是内核，而我们只是通过用户空间程序来给内核制定工作内容和创建规则。</para>
+    <para>首先让我们打来内核的<emphasis>QOS</emphasis>功能。</para>
+    <screen>
+[*] Networking support  --->
+  Networking options  --->
+    [*] QoS and/or fair queueing  --->
+      &lt;M&gt;   Token Bucket Filter (TBF)
+      &lt;M&gt;   Class Based Queueing (CBQ)
+      &lt;M&gt;   Hierarchical Token Bucket (HTB)
+    </screen>
+    <para>接下来让我们选择用户空间程序：</para>
+    <screen>
+Package Selection for the target  --->
+  Networking applications  --->
+    [*] iperf
+    [*] iproute2
+    </screen>
+    <para><emphasis>tc</emphasis>用来操作内核<emphasis>QOS</emphasis>模块的，而<emphasis>iperf</emphasis>则是用来测试网络性能的工具。</para>
+  </section>
+  <section>
+    <title>实验阶段</title>
+    <para>好了，现在进入实验阶段，下面看看网络拓扑图：</para>
+    <imageobject>
+      <imagedata align="right" width="6in" format="PNG" fileref="../images/qos.png"/>
+    </imageobject>
+    <para>嗯？这次<emphasis>openwrt</emphasis>倒是<quote>反客为主</quote>，这是为什么呢？因为<emphasis>linux</emphasis>的<emphasis>QOS</emphasis>只能限制下行速度，也就是说只能限制发出的速度，而不能限制输入的速度，简单的比方就是<quote>病从口入，祸从口出</quote>！</para>
+    <section>
+      <title>TBF简单限速</title>
+      <para>如果我们只是简单得限制上行速度，那么<emphasis>TBF-(Token Bucket Filter</emphasis>就是很好的选择，因为他使用简单，并且很精确。那么接下来，就让我们看看<emphasis>TBF</emphasis>是如何产生效果的吧。</para>
+      <para>首先在<emphasis>openwrt</emphasis>服务端开启<emphasis>iperf</emphasis>服务：</para>
+      <screen>
+<prompt># </prompt><userinput>iperf -s</userinput>
+------------------------------------------------------------
+Server listening on TCP port 5001
+TCP window size: 85.3 KByte (default)
+------------------------------------------------------------
+      </screen>
+      <para>接下来，我们下不急于设置<emphasis>QOS</emphasis>规则，我们先<quote>裸跑</quote>一下，看看没有限速的情况下，我们的网络情况如何？</para>
+      <screen>
+<prompt># </prompt><userinput>iperf -c 10.0.2.16</userinput>
+------------------------------------------------------------
+Client connecting to 10.0.2.16, TCP port 5001
+TCP window size: 19.6 KByte (default)
+------------------------------------------------------------
+[  3] local 10.0.2.15 port 40529 connected with 10.0.2.16 port 5001
+[ ID] Interval       Transfer     Bandwidth
+[  3]  0.0-10.2 sec  3.88 MBytes  3.19 Mbits/sec
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+<prompt>root@OpenWrt:/# </prompt><userinput>iperf -s</userinput>
+
+------------------------------------------------------------
+Server listening on TCP port 5001
+TCP window size: 85.3 KByte (default)
+------------------------------------------------------------
+[  4] local 10.0.2.16 port 5001 connected with 10.0.2.15 port 40529
+[ ID] Interval       Transfer     Bandwidth
+[  4]  0.0-10.8 sec  3.88 MBytes  3.02 Mbits/sec
+
+      </screen>
+      <para>哈，<emphasis>vde</emphasis>网络的速度还行，当然和物理网络相比还是有一定差距的，好，接下来让我们看看<emphasis>QOS</emphasis>后，是个什么情况吧！</para>
+      <screen>
+<prompt># </prompt><userinput>tc qdisc add dev eth0 root tbf rate 60kbit latency 50ms burst 1540</userinput>
+<prompt># </prompt><userinput>iperf -c 10.0.2.16</userinput>
+------------------------------------------------------------
+Client connecting to 10.0.2.16, TCP port 5001
+TCP window size: 19.6 KByte (default)
+------------------------------------------------------------
+[  3] local 10.0.2.15 port 40530 connected with 10.0.2.16 port 5001
+[ ID] Interval       Transfer     Bandwidth
+[  3]  0.0-20.1 sec   128 KBytes  52.1 Kbits/sec
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+------------------------------------------------------------
+Server listening on TCP port 5001
+TCP window size: 85.3 KByte (default)
+------------------------------------------------------------
+[  4] local 10.0.2.16 port 5001 connected with 10.0.2.15 port 40529
+[ ID] Interval       Transfer     Bandwidth
+[  4]  0.0-10.8 sec  3.88 MBytes  3.02 Mbits/sec
+[  4] local 10.0.2.16 port 5001 connected with 10.0.2.15 port 40530
+[  4]  0.0-22.6 sec   128 KBytes  46.3 Kbits/sec
+      </screen>
+      <para>嗯，效果很明显，很不错！</para>
+    </section>
+  </section>
 </chapter>
