@@ -1,6 +1,26 @@
 <bibliography xml:id="bibliography" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
   xmlns:xlink='http://www.w3.org/1999/xlink'>
   <title>参考文献</title>
+  <section>
+    <title>第一章</title>
+    <itemizedlist>
+      <listitem>
+        <ulink url="http://ubuntu.com.cn"></ulink> <emphasis>Ubuntu</emphasis>官方网站，大家可以从这里找到系统镜像和安装方法。
+      </listitem>
+      <listitem>
+        <ulink url="http://xubuntu.org/"></ulink> <emphasis>Xubuntu</emphasis>官方网站。
+      </listitem>
+      <listitem>
+        <ulink url="http://mirrors.163.com/"></ulink> 网易提供的镜像站点，速度很快哦！
+      </listitem>
+      <listitem>
+        <ulink url="http://wiki.qemu.org/"></ulink> <emphasis>qemu</emphasis>官方网站，大家这里可以下载代码。
+      </listitem>
+      <listitem>
+        <ulink url="http://wiki.virtualsquare.org/wiki/index.php/Main_Page"></ulink> <emphasis>vde</emphasis>官网，里面很多的<emphasis>tutorials</emphasis>值得参考。
+      </listitem>
+    </itemizedlist>
+  </section>
   <para>
     <ulink url="http://en.gentoo-wiki.com/wiki/Iptables_for_newbies">Iptables_for_newbies</ulink> -- 来自
     <emphasis>gentoo</emphasis>的<emphasis>wiki</emphasis>教新手配置防火墙，简单直白易懂，实战性很强。

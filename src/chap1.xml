@@ -4,7 +4,7 @@
   <para>既然我们要自己动手制作一个路由器，那么我们就需要一个开发/生产环境了。由于我们的路由器是运行在虚拟机中的，所以我们并不需要电线啊，电路板或者开发板之类的东西，况且他们还要耗费我们的银子。</para>
   <section>
     <title>安装Ubuntu</title>
-    <para><emphasis>Ubuntu</emphasis>是<emphasis>linux</emphasis>中用户体验相当好的一款<emphasis>linux</emphasis>发行版本，至于说怎么好，这个就因人而异了，<quote>萝卜青菜，个有所爱！</quote>我使用<emphasis>Ubuntu</emphasis>有好多年了，用着很稳定也很方便，所以也很少尝试其他的放行版本了，所以这里就以<emphasis>Ubuntu</emphasis>作为运行系统，然而我却十分不适应<emphasis>Ubuntu</emphasis>的<emphasis>Unity</emphasis>界面，于是我们在来一个折中--<emphasis>Xubuntu</emphasis>，他是<emphasis>Ubuntu</emphasis>的一个衍生版本，本身并没有太大的区别，只是用户界面使用的是<emphasis>Xfce</emphasis>，相对来说界面更传统，资源占用率更小一些。当然这只是我个人的使用习惯而已，好了，镜像下载看这里：</para>
+    <para><emphasis>Ubuntu</emphasis>是<emphasis>linux</emphasis>中用户体验相当好的一款<emphasis>linux</emphasis>发行版本，至于说怎么好，这个就因人而异了，<quote>萝卜青菜，各有所爱！</quote>我使用<emphasis>Ubuntu</emphasis>有好多年了，用着很稳定也很方便，所以也很少尝试其他的发行版本了，所以这里就以<emphasis>Ubuntu</emphasis>作为运行系统，然而我却十分不适应<emphasis>Ubuntu</emphasis>的<emphasis>Unity</emphasis>界面，于是我们在来一个折中--<emphasis>Xubuntu</emphasis>，他是<emphasis>Ubuntu</emphasis>的一个衍生版本，本身并没有太大的区别，只是用户界面使用的是<emphasis>Xfce</emphasis>，相对来说界面更传统，资源占用率更小一些。当然这只是我个人的使用习惯而已，好了，镜像下载看这里：</para>
       <itemizedlist>
         <listitem>
           <ulink url="http://xubuntu.org/getxubuntu/"></ulink>
@@ -16,8 +16,23 @@
         <ulink url="http://mirror.anl.gov/pub/ubuntu-iso/CDs-Xubuntu/12.10/release/xubuntu-12.10-desktop-amd64.iso"></ulink>
         </listitem>
       </itemizedlist>
-    <para>由于目前我还没有国内的镜像，所以下载会比较慢，所以请耐心等候吧。</para>
+      <para>由于目前<emphasis>Xubuntu</emphasis>还没有国内的镜像，所以下载会比较慢，所以请耐心等候吧。</para>
     <para>好了，下载OK，接下来我们开始安装系统了，这里有三种方式：</para>
+    <itemizedlist>
+      <listitem>
+        光盘安装
+      </listitem>
+      <listitem>
+        U盘安装
+      </listitem>
+      <listitem>
+        Wubi
+      </listitem>
+    </itemizedlist>
+    <para>上述3种安装方法网上有很多资源，大家可以谷歌一下，这里就不多介绍了，其中<emphasis>Wubi</emphasis>的方法比较独特，那就是他是把<emphasis>Ubuntu</emphasis>当作一个应用程序一样安装到<emphasis>Windows</emphasis>系统中的，好处是不用格式化硬盘了，只需要占用<emphasis>Windows</emphasis>的分区空间就行了，不过从效率上来说没有前两种方法好，如果你只是尝试一下的话，推荐使用<emphasis>Wubi</emphasis>。如果还嫌麻烦的话，那么就可以考虑使用虚拟机了。</para>
+    <para>系统安装完，我们还需要添加一些工具到系统中：</para>
+<prompt>liunx@ubuntu:~$ </prompt><userinput>sudo apt-get install build-essential</userinput>
+<para>这里我们将安装基本的编译工具集合，包括编译器之类的工具，当然仅仅这样还不够，我们接下来还要安装一些相关的<emphasis>dev</emphasis>文件，这个我们会一步一步地添加的。</para>
   </section>
   <section>
     <title>编译vde</title>
@@ -41,8 +56,7 @@ trunk/vde-2 vde_svn</userinput>
   </section>
   <section>
     <title>安装qemu</title>
-    <para>
-      ubuntu自带的qemu不支持<emphasis>vde</emphasis>选项，无法配合<emphasis>virtualbricks</emphasis>运行，所以我们自己编译<emphasis>qemu</emphasis>。
+    <para> ubuntu自带的qemu不支持<emphasis>vde</emphasis>选项，所以我们需要自己编译<emphasis>qemu</emphasis>。</para>
       <screen>
 <prompt>liunx@ubuntu:~/Work/DocBook/Work/code-farmer-note$ </prompt><userinput>/usr/bin/qemu-system-i386  --help
  |grep vde</userinput>
@@ -53,8 +67,9 @@ trunk/vde-2 vde_svn</userinput>
                 connect the vlan 'n' to port 'n' of a vde switch running
 -netdev [user|tap|bridge|vde|socket],id=str[,option][,option][,...]
       </screen>
-      从结果中可以看出ubuntu自带的qemu没有编译vde功能，这个困扰我好长时间，我一直奇怪为啥我按vde WiKi上的tutorial怎么都看不到效果，原来是这个原因！真让人郁闷。自己动手编译也不错啊，qemu1.2版本都支持<emphasis>or32</emphasis>了，太好了，不过在编译<emphasis>qemu</emphasis>前，一些开发库必须先整上，
+      <para>从结果中可以看出ubuntu自带的qemu没有编译vde功能，这个困扰我好长时间，我一直奇怪为啥我按vde WiKi上的tutorial怎么都看不到效果，原来是这个原因！真让人郁闷。自己动手编译也不错啊，qemu1.2版本都支持<emphasis>or32</emphasis>了，太好了，不过在编译<emphasis>qemu</emphasis>前，一些开发库必须先整上，
       <screen>
+<prompt>liunx@ubuntu:~/Work/Emulator/src/qemu$ </prompt><userinput>sudo apt-get install libsdl1.2-dev libcap-ng-dev</userinput>
 <prompt>liunx@ubuntu:~/Work/Emulator/src/qemu$ </prompt><userinput>./configure</userinput>
 Install prefix    /usr/local
 BIOS directory    /usr/local/share/qemu
@@ -155,7 +170,9 @@ virtio-blk-data-plane no
       </screen>
       这里我们要关注几个配置选项，<emphasis>kvm enable</emphasis>，<emphasis>SDL</emphasis>和<emphasis>vde</emphasis>，这几个配置一定齐全，这样才行，如果不是<emphasis>yes</emphasis>，话，那就下载他们的开发库和头文件，vde的话如前文所述，已经成功安装了，就不必多虑了。然后<command>make &amp;&amp; make install</command>，经过漫长的编译（如果不幸你的电脑特别挫的话，其实也不必自责，我的6核大电脑也要忙活一段时间呢），然后自己编译的<emphasis>qemu</emphasis>就诞生了！注意安装完成了别忘了看一下vde功能是否编译进去了，不然就又要返工了！
     </para>
+    <para>如果你的电脑比较古老的话，可能不支持虚拟化技术，那么我们就无法享受到<emphasis>kvm</emphasis>带来的性能提升了，不过还好，我们的虚拟机系统很小，负载不会很大的，所以这个影响还不大，只是电脑内存稍微大一些就好。</para>
   </section>
+  <!--
   <section>
     <title>安装Virtualbricks</title>
     <para>
@@ -180,5 +197,5 @@ virtio-blk-data-plane no
       哈！效果还是蛮酷的是不是？
     </para>
   </section>
-
+  -->
 </chapter>
