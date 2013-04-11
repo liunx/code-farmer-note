@@ -1,14 +1,9 @@
 <chapter xml:id="chapter3" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
   xmlns:xlink='http://www.w3.org/1999/xlink'>
   <title>搭建嵌入式系统</title>
-  <para>
-    <emphasis>嵌入式系统</emphasis>是一个很广泛的概念，简单的说，<emphasis>嵌入式系统</emphasis>是一个“小”系统，比如说手机，车载设备等，这里我们构建的<emphasis>嵌入式</emphasis>系统就是具有这个特点，比如说他的体积很小，启动速度快，功能单一，相对于PC系统来说，更加方便我们测试和实验，而且内存占用少，所以配置相对低的电脑也可以轻松运行，可以说物美价廉。
-  </para>
+  <para>前面我们准备好了开发环境，现在是演职人员登场的时候了。这里是基于<emphasis>linux</emphasis>的嵌入式系统。</para>
   <section>
     <title>运行OpenWrt</title>
-    <para>
-      好了，外围环境搞定了，接下来就是要选择客户端系统了，一台路由器不仅仅有硬件系统构成的，还需要软件系统配合才能发挥作用，否则就是<emphasis>裸奔</emphasis>了。客户端系统的选用标准前面我已介绍过了，下面就开始编译客户端系统了。
-    </para>
     <para>
       首先登场的是<emphasis>OpenWrt</emphasis>，这是一款很出名的开源路由器系统，当然是基于<emphasis>linux</emphasis>的了，那么<emphasis>OpenWrt</emphasis>已经就是一个路由系统了，作为嵌入式系统，他的体积很小，启动速度很快，加上其支持<emphasis>X86</emphasis>平台，很符合我们的要求。而且他包含了大量的开源软件，使得我们不必满世界的移植程序了，Perfact！
     </para>
@@ -37,46 +32,35 @@
       <listitem>snapshots</listitem>
       <listitem>attitude_adjustment</listitem>
     </orderedlist>
-    <emphasis>backfire</emphasis>和<emphasis>kamikaze</emphasis>属于两个稳定的分支，正常使用没有什么问题，就是版本比较老了，相应的软件包也比较老，<emphasis>attitude_adjustment</emphasis>则是最近的稳定版本，这里我们可以使用他们的<emphasis>x86</emphasis>版本，但是这里我们选择<emphasis>snapshots</emphasis>版本，虽然快照版本相对来说不是很稳定，但是代码更新很快，内核版本，软件包也更新，其实快照版本就是用来给大家测试用的，以便获取错误信息的反馈，增强系统的稳定性，所以，本着参与的目的，我们选择<emphasis>snapshots</emphasis>版本，如果有问题的话，我们还可以反馈一些内容了。<emphasis>但是，需要注意的是，由于这是个快照版本，内核模块重新编译的话，是使得安装内核模块时失败</emphasis>，还好整个系统不是很大，我们只要及时跟新镜像就是了，而且也用不到所有的软件包的，所以够用了。
-    <para>
-      接下来，我们进入<emphasis>snapshots</emphasis>目录，下载镜像。
-    <imageobject>
-      <imagedata align="left" width="6in" format="PNG"
-        fileref="../images/openwrt-download2.png"/>
-    </imageobject>
-    这里，我们只关注三个镜像文件：
+    <emphasis>backfire</emphasis>和<emphasis>kamikaze</emphasis>属于两个稳定的分支，正常使用没有什么问题，就是版本比较老了，相应的软件包也比较老，<emphasis>attitude_adjustment</emphasis>则是最近的稳定版本，这里我们可以使用他们的<emphasis>x86</emphasis>版本，但是这里我们选择<emphasis>snapshots</emphasis>版本，虽然快照版本相对来说不是很稳定，但是代码更新很快，内核版本，软件包也更新，其实快照版本就是用来给大家测试用的，以便获取错误信息的反馈，增强系统的稳定性，所以，本着参与的目的，我们选择<emphasis>snapshots</emphasis>版本，如果有问题的话，我们还可以反馈一些内容了。<emphasis>但是，需要注意的是，由于这是个快照版本，内核模块重新编译的话，是使得安装内核模块时失败</emphasis>，还好整个系统不是很大，我们只要及时跟新镜像就是了，而且也用不到所有的软件包的，所以够用了。 </para>
+      <para>这里我们选择<emphasis>attitude_adjustment</emphasis>版本吧，可以避免一些不必要的麻烦。</para>
+      <para>接下来，我们进入<emphasis>attitude_adjustment</emphasis>目录，下载镜像。</para>
     <orderedlist>
       <listitem>
-        <ulink url="http://downloads.openwrt.org/snapshots/trunk/x86/openwrt-x86-generic-combined-ext4.img.gz"></ulink></listitem>
-      <listitem><ulink url="http://downloads.openwrt.org/snapshots/trunk/x86/openwrt-x86-generic-rootfs-ext4.img.gz"></ulink></listitem>
-  <listitem><ulink url="http://downloads.openwrt.org/snapshots/trunk/x86/openwrt-x86-generic-vmlinuz"></ulink>
-  </listitem>
+        <ulink url="http://downloads.openwrt.org/attitude_adjustment/12.09-rc1/x86/generic/openwrt-x86-generic-rootfs-ext4.img.gz"></ulink></listitem>
+      <listitem><ulink url="http://downloads.openwrt.org/attitude_adjustment/12.09-rc1/x86/generic/openwrt-x86-generic-vmlinuz"></ulink></listitem>
+      <listitem><ulink url="http://downloads.openwrt.org/attitude_adjustment/12.09-rc1/x86/generic/openwrt-x86-generic-combined-ext4.img.gz"></ulink></listitem>
     </orderedlist>
-    <emphasis>openwrt-x86-generic-combined-ext4.img.gz</emphasis>包括了引导程序、内核和跟文件系统，优点是简单易用，缺点是无法挂载，所以导入配置文件的时候有些麻烦了，但是也没关系的，如果我们安装了<emphasis>openWrt</emphasis>自带的用户界面的话，可以导入/导出配置文件的，但是目前来说作用还不是很大，反而增加了复杂性，所以我们选择后面两个镜像来配合使用，前者只包含了根文件系统，后者是内核。
-    </para>
+    <para><emphasis>openwrt-x86-generic-combined-ext4.img.gz</emphasis>包括了引导程序、内核和跟文件系统，优点是简单易用，缺点是无法挂载，所以导入配置文件的时候有些麻烦了，但是也没关系的，如果我们安装了<emphasis>openWrt</emphasis>自带的用户界面的话，可以导入/导出配置文件的，但是目前来说作用还不是很大，反而增加了复杂性，所以我们选择后面两个镜像来配合使用，前者只包含了根文件系统，后者是内核。 </para>
     <para>
-      好了，下面，见证奇迹的时刻到了，前面做了那么多艰苦卓绝的工作，该是出成果的时候了！先看一下我们的文件布局：
+      好了，别忘了解压<emphasis>zip</emphasis>文件。下面，见证奇迹的时刻到了，前面做了那么多艰苦卓绝的工作，该是出成果的时候了！先看一下我们的文件布局：
       <screen>
 <prompt>liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ </prompt><userinput>tree</userinput>
 .
 ├── boot.sh
-├── firewall
 ├── images
 │   ├── openwrt-x86-generic-combined-ext4.img
-│   ├── openwrt-x86-generic-combined-ext4.img.old
 │   ├── openwrt-x86-generic-rootfs-ext4.img
 │   └── openwrt-x86-generic-vmlinuz
-├── network
 ├── qemu-ifdown
 ├── qemu-ifup
-└── rootfs
 
-2 directories, 9 files
+2 directories, 7 files
       </screen>
       再看我们的运行脚本：
       <screen>
 <prompt>liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ </prompt><userinput>ls</userinput>
-boot.sh  firewall  images  network  qemu-ifdown  qemu-ifup  rootfs
+boot.sh  images  qemu-ifdown  qemu-ifup
 <prompt>liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ </prompt><userinput>cat qemu-ifdown</userinput>
 #!/bin/bash -
 
@@ -103,11 +87,7 @@ set -o nounset                              # Treat unset variables as an error
         -nographic \
         -usb \
         -net nic,vlan=3,model=ne2k_pci,macaddr="12:34:56:78:9a:00" \
-        -net tap,vlan=3,ifname=openwrt0,script=qemu-ifup,downscript=qemu-ifdown \
-        -net nic,vlan=1,model=pcnet,macaddr="12:34:56:78:9a:01" \
-        -net socket,vlan=1,listen=:8010 \
-        -net nic,vlan=2,model=pcnet,macaddr="12:34:56:78:9a:02" \
-        -net socket,vlan=2,listen=:8011
+        -net tap,vlan=3,ifname=openwrt0,script=qemu-ifup,downscript=qemu-ifdown
 
       </screen>
       看好了，大家！这里我们需要五个文件：
@@ -120,6 +100,7 @@ set -o nounset                              # Treat unset variables as an error
     </orderedlist>
     你都找到了吗？
     </para>
+    <para>
     最后，激动人心的时刻到了，运行！
     <screen>
 <prompt>liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ </prompt><userinput>sudo ./boot.sh</userinput>
