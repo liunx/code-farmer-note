@@ -151,11 +151,9 @@ set -o nounset                              # Treat unset variables as an error
       看我们最后的<emphasis>-net</emphasis>配置，上面的配置是制定网卡模型和MAC地址，这个是通用的，主要是后面的配置我们指定了<emphasis>vde</emphasis>网络，这样我们的<emphasis>VDE</emphasis>网络就配置好了。
     </para>
   </section>
-  <section>
-    <title>补充信息</title>
     <section>
       <title>slirpvde</title>
-      <para><emphasis>slirpvde</emphasis>是一个虚拟路由器，我们可以把<emphasis>slirpvde</emphasis>加入到交换机网络中来动态分配地址，同时通过<emphasis>slirpvde</emphasis>，交换机网络中的其他主机可以访问外部网络，但是遗憾的是，<emphasis>slirpvde</emphasis>却无法对<emphasis>PING</emphasis>测试做地址转换，所以当我们<emphasis>ping</emphasis>外部网络时，你会发现无响应的。不过，没关系，我们可以正常访问外部网络了，而无需超级用户权限了。</para>
+      <para><emphasis>slirpvde</emphasis>是一个用户空间的虚拟路由器，我们可以把<emphasis>slirpvde</emphasis>加入到交换机网络中来动态分配地址，同时通过<emphasis>slirpvde</emphasis>，交换机网络中的其他主机可以访问外部网络，但是遗憾的是，<emphasis>slirpvde</emphasis>却无法对<emphasis>ICMP</emphasis>测试做地址转换，也就是说当我们<emphasis>ping</emphasis>外部网络时，你会发现无响应的。不过，没关系，我们可以正常访问外部网络了，而无需超级用户权限了。</para>
       <para>所以我们的<emphasis>vde switch</emphasis>网络可以这样设置：</para>
       <screen>
 <prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images/custom$ </prompt><userinput>cat switch.sh</userinput>
@@ -168,6 +166,5 @@ slirpvde -d -s /tmp/switch -dhcp
 echo "OK"
       </screen>
     </section>
-  </section>
 </chapter>
 
