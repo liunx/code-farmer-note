@@ -16,6 +16,11 @@
       <listitem>
         <ulink url="http://wiki.qemu.org/"></ulink> <emphasis>qemu</emphasis>官方网站，大家这里可以下载代码。
       </listitem>
+    </itemizedlist>
+  </section>
+  <section>
+    <title>第二章</title>
+    <itemizedlist>
       <listitem>
         <ulink url="http://wiki.virtualsquare.org/wiki/index.php/Main_Page"></ulink> <emphasis>vde</emphasis>官网，里面很多的<emphasis>tutorials</emphasis>值得参考。
       </listitem>
