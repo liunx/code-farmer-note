@@ -10,24 +10,25 @@
   <section>
     <title>搭建主机网络</title>
     <para>
-      搭建主机网络的办法有很多，下面我们就介绍一种方法：
+      搭建主机网络的办法有很多，下面我们就介绍一种方法：</para>
       <screen>
 <prompt>liunx@ubuntu:~$ </prompt><userinput>sudo apt-get insall virt-manager</userinput>
-正在读取软件包列表... 完成
-正在分析软件包的依赖关系树
-正在读取状态信息... 完成
-virt-manager 已经是最新的版本了。
-升级了 0 个软件包，新安装了 0 个软件包， 要卸载 0 个软件包，有 150 个软件包未被升级。
       </screen>
-      如果没有安装<emphasis>virt-manager</emphasis>，系统会下载安装的。如果安装成功的话，接下来我们开始创建<emphasis>主机网络</emphasis>。启动<emphasis>virt-manager</emphasis>：
-    </para>
+      <para>安装后，我们先运行一下<emphasis>virt-manager</emphasis>，看看他到底是个什么东东：</para>
     <menuchoice>
       <guimenu>应用程序菜单</guimenu>
       <guisubmenu>系统</guisubmenu>
       <guimenuitem>虚拟系统管理器</guimenuitem>
     </menuchoice>
-    <para>
-      进入<emphasis>virt-manager</emphasis>主界面，选择：
+    <para>不幸的是，<emphasis>virt-manager</emphasis>报错了，<quote>Unable to connect to libvirt</quote>，原来，我们还没有加入<emphasis>libvirtd</emphasis>的用户组，所以没有权限运行，接下来我们需要把当前用户加入到<emphasis>libvirtd</emphasis>的用户组。</para>
+    <menuchoice>
+      <guimenu>应用程序菜单</guimenu>
+      <guisubmenu>设置管理器</guisubmenu>
+      <guimenuitem>用户和组</guimenuitem>
+      <guimenuitem>管理组</guimenuitem>
+    </menuchoice>
+    <para>找到<emphasis>libvirtd</emphasis>组，然后点击属性，打勾当前用户并确定即可，别忘了输入密码。最后注销再登录进去，这样配置就生效了。</para>
+    <para>接下来开始配置网络了，进入<emphasis>virt-manager</emphasis>主界面，选择：
     </para>
     <menuchoice>
       <guimenu>编辑</guimenu>
