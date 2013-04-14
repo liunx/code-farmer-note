@@ -43,4 +43,11 @@ mru 1400
     </screen>
     <para>这里我们注释掉<quote>dump</quote>选项即可。</para>
   </section>
+  <section>
+    <title>
+failed to initialize KVM: Device or resource busy
+No accelerator found!
+    </title>
+    <para>如果你已经运行了<emphasis>virtualbox</emphasis>，那么你很可能会遇到这个问题，很不幸，<emphasis>Vbox</emphasis>有点<quote>独</quote>了，<emphasis>kvm</emphasis>被占用了，解决方法就是关掉<emphasis>Vbox</emphasis>或者取消<quote>-enable-kvm</quote>这一项吧。</para>
+  </section>
 </appendix>
