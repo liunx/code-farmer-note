@@ -86,7 +86,7 @@ set -o nounset                              # Treat unset variables as an error
         -enable-kvm \
         -nographic \
         -usb \
-        -net nic,vlan=3,model=ne2k_pci,macaddr="12:34:56:78:9a:00" \
+        -net nic,vlan=3,model=e1000,macaddr="12:34:56:78:9a:00" \
         -net tap,vlan=3,ifname=openwrt0,script=qemu-ifup,downscript=qemu-ifdown
 
       </screen>
@@ -100,6 +100,10 @@ set -o nounset                              # Treat unset variables as an error
     </orderedlist>
     你都找到了吗？
     </para>
+    <para>等等，别忘了给脚本加上可执行权限！</para>
+    <screen>
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/OpenWrt/work/openwrt$ </prompt><userinput>chmod +x boot.sh qemu-ifup qemu-ifdown</userinput>
+    </screen>
     <para>
     最后，激动人心的时刻到了，运行！
     <screen>
@@ -124,7 +128,7 @@ set -o nounset                              # Treat unset variables as an error
       由于<emphasis>buildroot</emphasis>本身只是<emphasis>Makefile</emphasis>和<emphasis>patch</emphasis>的集合，本身并没有含有软件的源代码，所以需要下载和编译源代码，因此我们需要满足这些条件才行，<emphasis>buildroot</emphasis>所依赖的软件可以参考这里<ulink url="http://buildroot.uclibc.org/downloads/manual/manual.html#requirement"></ulink>所以请务必确保满足这些以来关系。
     </para>
     <para>
-      <emphasis>第二步</emphasis>配置。<emphasis>buildroot</emphasis>支持多种系统架构，并且包含很多一配置好的模板，其中就有支持<emphasis>x86</emphasis>的模板，我们只需在他的基础上做一些调整即可：
+      <emphasis>第二步</emphasis>配置<emphasis>buildroot</emphasis>。<emphasis>buildroot</emphasis>支持多种系统架构，并且包含很多一配置好的模板，其中就有支持<emphasis>x86</emphasis>的模板，我们只需在他的基础上做一些调整即可：
       <screen>
 <prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11$ </prompt><userinput>make help</userinput>
 Cleaning:
@@ -265,6 +269,7 @@ bzImage  rootfs.ext2
       </screen>
     </para>
   </section>
+  <!--
   <section>
     <title>补充信息</title>
     <section>
@@ -277,4 +282,5 @@ bzImage  rootfs.ext2
     <para>这里我们选择<emphasis>12.09-rc1</emphasis>，最近的<emphasis>rc</emphasis>候选版本即可。</para>
     </section>
   </section>
+  -->
 </chapter>
