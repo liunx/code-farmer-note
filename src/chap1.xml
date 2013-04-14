@@ -31,45 +31,74 @@
     </itemizedlist>
     <para>上述3种安装方法网上有很多资源，大家可以谷歌一下，这里就不多介绍了，其中<emphasis>Wubi</emphasis>的方法比较独特，那就是他是把<emphasis>Ubuntu</emphasis>当作一个应用程序一样安装到<emphasis>Windows</emphasis>系统中的，好处是不用格式化硬盘了，只需要占用<emphasis>Windows</emphasis>的分区空间就行了，不过从效率上来说没有前两种方法好，如果你只是尝试一下的话，推荐使用<emphasis>Wubi</emphasis>。如果还嫌麻烦的话，那么就可以考虑使用虚拟机了。</para>
     <para>系统安装完，我们还需要添加一些工具到系统中：</para>
+<screen>
 <prompt>liunx@ubuntu:~$ </prompt><userinput>sudo apt-get install build-essential</userinput>
+</screen>
 <para>这里我们将安装基本的编译工具集合，包括编译器之类的工具，当然仅仅这样还不够，我们接下来还要安装一些相关的<emphasis>dev</emphasis>文件，这个我们会一步一步地添加的。</para>
   </section>
   <section>
     <title>编译vde</title>
     <para>
-      ubuntu软件包里似乎对<emphasis>vde</emphasis>不是特别重视，更新的不是很及时，所以我们自己动手编译<emphasis>vde</emphasis>，首先我们通过<emphasis>svn</emphasis>来获取<emphasis>vde</emphasis>的源代码： 
+      ubuntu软件包里似乎对<emphasis>vde</emphasis>不是特别重视，更新的不是很及时，所以我们自己动手编译<emphasis>vde</emphasis>，首先我们通过<emphasis>svn</emphasis>来获取<emphasis>vde</emphasis>的源代码：</para>
 <screen>
+<prompt>liunx@ubuntu:~/Work/Emulator/work$ </prompt><userinput>sudo apt-get install subversion</userinput>
 <prompt>liunx@ubuntu:~/Work/Emulator/work$ </prompt><userinput>svn co https://vde.svn.sourceforge.net/svnroot/vde/
 trunk/vde-2 vde_svn</userinput>
 </screen>
-接下来配置编译<emphasis>vde</emphasis>了：
+<para><emphasis>ubuntu</emphasis>默认是没有安装<emphasis>svn</emphasis>的，所以需要安装，<emphasis>vde</emphasis>源码是用<emphasis>automake tools</emphasis>进行配置的，所以我们还需要安装<emphasis>automake</emphasis>工具。</para>
+<screen>
+<prompt>liunx@ubuntu:~/Work/Emulator/work$ </prompt><userinput>sudo apt-get install autoconf</userinput>
+<prompt>liunx@ubuntu:~/Work/Emulator/work$ </prompt><userinput>sudo apt-get install libtool</userinput>
+</screen>
+<para>接下来配置编译<emphasis>vde</emphasis>了：</para>
 <screen>
 <prompt>liunx@ubuntu:~/Work/Emulator/work$ </prompt><userinput>cd vde_svn; autoreconf -fi; ./configure 
---enable-experimental; make; sudo make install</userinput>
+--enable-experimental</userinput>
+
+
+Configure results:
+
+ - VDE CryptCab............ disabled
+ + VDE Router.............. enabled
+ - Python Libraries........ disabled
+ + TAP support............. enabled
+ - pcap support............ disabled
+ + Experimental features... enabled
+ - Profiling options....... disabled
+ - Kernel switch........... disabled
+
+
+configure: WARNING: VDE CryptCab support has been disabled because libcrypto is
+not installed on your system, or because openssl/blowfish.h could not be found.
+Please install them if you want CryptCab to be compiled and installed.
+
+configure: WARNING: Python libraries support has been disabled because python is
+not installed on your system, or because it could not be found. Please install
+it if you want Python libraries to be compiled and installed.
+
+configure: WARNING: VDE vde_pcapplug and packet dump plugin have been disabled
+because libpcap is not installed on your system, or because it is too old.
+Please install it if you want vde_pcapplug and pdump to be compiled and
+installed.
+
+
+Type 'make' to compile vde2 2.3.2,
+or type 'make V=1' for verbose compiling
+and then type 'make install' to install it into /usr/local
 </screen>
-<emphasis>vde</emphasis>支持<emphasis>python</emphasis>接口，虽然我还不知道这个怎么用，但是还是支持为好，这里我们就要下载python的开发文件了：
+<para>只是有几个功能<quote>disabled</quote>了，说明我们还是缺少相关的开发库的头文件：</para>
 <screen>
-<prompt>liunx@ubuntu:~/Work/Emulator/work$ </prompt><userinput>sudo apt-get install python-all-dev</userinput>
+<prompt>liunx@ubuntu:~/Work/Emulator/work$ </prompt><userinput>sudo apt-get install libpcap-dev libssl-dev python-all-dev</userinput>
 </screen>
-如果一切顺利的话，那么<emphasis>vde</emphasis>相关文件就会安装到<filename id="directory">/usr/local/</filename>这样的好处是不会和系统原装的文件产生冲突，也方便管理了。
-    </para>
+<para>
+如果一切顺利的话，那么<emphasis>vde</emphasis>相关文件就会安装到<filename id="directory">/usr/local/</filename>这样的好处是不会和系统原装的文件产生冲突，也方便管理了。</para>
   </section>
   <section>
     <title>安装qemu</title>
-    <para> ubuntu自带的qemu不支持<emphasis>vde</emphasis>选项，所以我们需要自己编译<emphasis>qemu</emphasis>。</para>
-      <screen>
-<prompt>liunx@ubuntu:~/Work/DocBook/Work/code-farmer-note$ </prompt><userinput>/usr/bin/qemu-system-i386  --help
- |grep vde</userinput>
-<prompt>liunx@ubuntu:~/Work/DocBook/Work/code-farmer-note$ </prompt>
-<prompt>liunx@ubuntu:~/Work/DocBook/Work/code-farmer-note$ </prompt><userinput>/usr/local/bin/qemu-system-i386  --help
- |grep vde</userinput>
--net vde[,vlan=n][,name=str][,sock=socketpath][,port=n][,group=groupname][,mode=octalmode]
-                connect the vlan 'n' to port 'n' of a vde switch running
--netdev [user|tap|bridge|vde|socket],id=str[,option][,option][,...]
-      </screen>
-      <para>从结果中可以看出ubuntu自带的qemu没有编译vde功能，这个困扰我好长时间，我一直奇怪为啥我按vde WiKi上的tutorial怎么都看不到效果，原来是这个原因！真让人郁闷。自己动手编译也不错啊，qemu1.2版本都支持<emphasis>or32</emphasis>了，太好了，不过在编译<emphasis>qemu</emphasis>前，一些开发库必须先整上，
-      <screen>
-<prompt>liunx@ubuntu:~/Work/Emulator/src/qemu$ </prompt><userinput>sudo apt-get install libsdl1.2-dev libcap-ng-dev</userinput>
+    <para> ubuntu自带的qemu不支持<emphasis>vde</emphasis>选项，所以我们需要自己编译<emphasis>qemu</emphasis>。当然了，编译<emphasis>qemu</emphasis>也需要一些头文件。</para>
+    <screen>
+<prompt>liunx@ubuntu:~/Work/Emulator/src/qemu$ </prompt><userinput>sudo apt-get install libglib2.0-dev libsdl1.2-dev 
+libncurses5-dev uuid-dev libcap-ng-dev</userinput>
 <prompt>liunx@ubuntu:~/Work/Emulator/src/qemu$ </prompt><userinput>./configure</userinput>
 Install prefix    /usr/local
 BIOS directory    /usr/local/share/qemu
@@ -167,9 +196,9 @@ seccomp support   no
 coroutine backend ucontext
 GlusterFS support no
 virtio-blk-data-plane no
-      </screen>
-      这里我们要关注几个配置选项，<emphasis>kvm enable</emphasis>，<emphasis>SDL</emphasis>和<emphasis>vde</emphasis>，这几个配置一定齐全，这样才行，如果不是<emphasis>yes</emphasis>，话，那就下载他们的开发库和头文件，vde的话如前文所述，已经成功安装了，就不必多虑了。然后<command>make &amp;&amp; make install</command>，经过漫长的编译（如果不幸你的电脑特别挫的话，其实也不必自责，我的6核大电脑也要忙活一段时间呢），然后自己编译的<emphasis>qemu</emphasis>就诞生了！注意安装完成了别忘了看一下vde功能是否编译进去了，不然就又要返工了！
-    </para>
+</screen>
+<para>这里我们要关注几个配置选项，<emphasis>kvm enable</emphasis>，<emphasis>SDL</emphasis>和<emphasis>vde</emphasis>，这几个配置一定齐全，这样才行，如果不是<emphasis>yes</emphasis>，话，那就下载他们的开发库和头文件，vde的话如前文所述，已经成功安装了，就不必多虑了。然后<command>make &amp;&amp; make install</command>，经过漫长的编译（如果不幸你的电脑特别挫的话，其实也不必自责，我的6核大电脑也要忙活一段时间呢），然后自己编译的<emphasis>qemu</emphasis>就诞生了！注意安装完成了别忘了看一下vde功能是否编译进去了，不然就又要返工了！
+</para>
     <para>如果你的电脑比较古老的话，可能不支持虚拟化技术，那么我们就无法享受到<emphasis>kvm</emphasis>带来的性能提升了，不过还好，我们的虚拟机系统很小，负载不会很大的，所以这个影响还不大，只是电脑内存稍微大一些就好。</para>
   </section>
   <!--
