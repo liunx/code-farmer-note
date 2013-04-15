@@ -33,8 +33,8 @@ set -o nounset                              # Treat unset variables as an error
 
 /usr/local/bin/qemu-system-i386 \
         -m 64M \
-        -kernel  bzImage \
-        -hda  rootfs.ext2 \
+        -kernel images/bzImage \
+        -hda  images/rootfs.ext2 \
         -append "root=/dev/sda console=ttyS0" \
         -enable-kvm \
         -nographic \
@@ -528,24 +528,42 @@ exit $?
       <para>
         好了，一个崭新的<quote>动物人</quote>终于诞生了，接下来就该是<quote>是骡子是马，牵出去溜溜了！</quote>显然，单是一个<quote>老章</quote>恐怕看不出来效果了，那么就让<emphasis>openwrt</emphasis>友情出演！
         <screen>
-<prompt>liunx@ubuntu:~/Work/OpenWrt/work/x86$ </prompt><userinput>cat boot2.sh</userinput>
+<prompt>liunx@ubuntu:~/Work/OpenWrt/work/x86$ </prompt><userinput>cat client.sh</userinput>
 #!/bin/bash -
 set -o nounset                              # Treat unset variables as an error
 
 /usr/local/bin/qemu-system-i386 \
         -m 64M \
-        -kernel openwrt-x86-generic-vmlinuz \
-        -hda openwrt-x86-generic-rootfs-ext4.img \
+        -kernel images/openwrt-x86-generic-vmlinuz \
+        -hda images/openwrt-x86-generic-rootfs-ext4.img \
         -append "root=/dev/sda console=ttyS0" \
         -enable-kvm \
         -nographic \
         -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:02 \
-<emphasis>
         -net vde,vlan=0,sock=/tmp/lan1.ctl
-</emphasis>
         </screen>
-        重点就在这里，通过<quote>老章</quote>的<quote>线</quote>连接上去！接下来<command>./boot2.sh</command>然后从<quote>老章</quote>获取<emphasis>IP</emphasis>看看！
+        重点就在这里，通过<quote>老章</quote>的<quote>线</quote>连接上去！接下来<command>./client.sh</command>然后从<quote>老章</quote>获取<emphasis>IP</emphasis>看看，不过在这之前，我们还需要对<emphasis>openwrt</emphasis>做个小配置：</para>
         <screen>
+<prompt>root@OpenWrt:/# </prompt><userinput>cat /etc/config/network</userinput>
+# Copyright (C) 2006 OpenWrt.org
+
+config interface loopback
+        option ifname   lo
+        option proto    static
+        option ipaddr   127.0.0.1
+        option netmask  255.0.0.0
+
+config interface lan
+        option ifname   eth1
+        option type     bridge
+        option proto    static
+        option ipaddr   192.168.1.1
+        option netmask  255.255.255.0
+
+<prompt>root@OpenWrt:/# </prompt><userinput>/etc/init.d/network restart</userinput>
+      </screen>
+      <para>我们只是把<emphasis>eth0</emphasis>从桥接设备中解放出来，然后重启网络配置。</para>
+      <screen>
 <prompt>root@OpenWrt:/# </prompt><userinput>udhcpc -i eth0</userinput>
 udhcpc (v1.19.4) started
 [   35.887280] 8021q: adding VLAN 0 to HW filter on device eth0
@@ -557,61 +575,9 @@ Lease of 192.168.1.166 obtained, lease time 43200
 udhcpc: ifconfig eth0 192.168.1.166 netmask 255.255.255.0 broadcast 192.168.1.255
 udhcpc: setting default routers: 192.168.1.1
         </screen>
+      <para>
         哈，成功了！
       </para>
     </section>
-  </section>
-  <section>
-    <title>补充信息</title>
-    <section>
-      <title>定制脚本安装器</title>
-    <para>事情总是不完美的，但是我们还是尽善尽美的好。我们给<emphasis>buildroot</emphasis>添加了那么多脚本文件，但是我们却不知道如何保存这些文件，当我们重新编译<emphasis>buildroot</emphasis>时，一切努力都付之一炬了，所以我们可以创建一个脚本帮我们干这件事。</para>
-    <screen>
-<prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images$ </prompt><userinput>tree custom/</userinput>
-custom/
-├── dnsmasq.conf
-├── firewall
-├── install.sh
-├── interfaces
-├── S50dnsmasq
-├── scripts
-│   └── bridge
-└── switch.sh
-
-1 directory, 7 files
-<prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images$ </prompt><userinput>cat custom/install.sh</userinput>
-#!/bin/bash -
-set -o nounset                              # Treat unset variables as an error
-
-ROOTFS=../rootfs
-IMAGE=../rootfs.ext2
-
-echo "mounting $IMAGE..."
-mount $IMAGE $ROOTFS -o loop
-
-install -m 600 dnsmasq.conf $ROOTFS/etc/
-install -m 600 interfaces $ROOTFS/etc/network/
-mkdir -p $ROOTFS/usr/lib/scripts
-install -m 755 scripts/bridge $ROOTFS/usr/lib/scripts/
-ln -fs /usr/lib/scripts/bridge  $ROOTFS/etc/network/if-pre-up.d/
-ln -fs /usr/lib/scripts/bridge  $ROOTFS/etc/network/if-post-down.d/
-install -m 755 S50dnsmasq $ROOTFS/etc/init.d/
-install -m 755 firewall $ROOTFS/etc/init.d/S60firewall
-
-#echo "umount $IMAGE... (Y/N)"
-#read ANSWER
-umount $ROOTFS
-echo "complete!"
-
-<prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images$ </prompt><userinput>cd custom/</userinput>
-<prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images/custom$ </prompt><userinput>sudo ./install.sh</userinput>
-[sudo] password for liunx:
-mounting ../rootfs.ext2...
-complete!
-    </screen>
-    <warning>
-      <para>亲，请注意脚本中的参数变量，根据自己保存文件的具体位置来设置！</para>
-    </warning>
-  </section>
   </section>
 </chapter>
