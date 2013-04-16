@@ -96,8 +96,8 @@ set -o nounset                              # Treat unset variables as an error
 
 /usr/local/bin/qemu-system-i386 \
         -m 64M \
-        -kernel openwrt-x86-generic-vmlinuz \
-        -hda openwrt-x86-generic-rootfs-ext4.img \
+        -kernel images/openwrt-x86-generic-vmlinuz \
+        -hda images/openwrt-x86-generic-rootfs-ext4.img \
         -append "root=/dev/sda console=ttyS0" \
         -enable-kvm \
         -daemonize \
@@ -158,15 +158,22 @@ root@OpenWrt:/#
     </section>
     <section>
       <title>创建路由器</title>
+      <para>这里我们选用<emphasis>vnc</emphasis>远程桌面连接，而不是串口输出了，所以要对<emphasis>buildroot</emphasis>的参数做一些修改：</para>
       <screen>
+System configuration  --->
+    (tty1) Port to run a getty (login prompt) on
+      </screen>
+      <para>这样，我们就可以正常登录了。然后安装<emphasis>xvnc4viewer</emphasis>：</para>
+      <screen>
+<prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images$ </prompt><userinput>sudo apt-get install xvnc4viewer</userinput>
 <prompt>liunx@ubuntu:~/Work/Buildroot/work/buildroot-2012.11/output/images$ </prompt><userinput>cat router.sh</userinput>
 #!/bin/bash -
 set -o nounset                              # Treat unset variables as an error
 
 /usr/local/bin/qemu-system-i386 \
         -m 64M \
-        -kernel  bzImage \
-        -hda  rootfs.ext2 \
+        -kernel images/bzImage \
+        -hda  images/rootfs.ext2 \
         -append "root=/dev/sda console=ttyS0" \
         -enable-kvm \
         -daemonize \
@@ -197,8 +204,8 @@ set -o nounset                              # Treat unset variables as an error
 
 /usr/local/bin/qemu-system-i386 \
         -m 64M \
-        -kernel openwrt-x86-generic-vmlinuz \
-        -hda openwrt-x86-generic-rootfs-ext4.img \
+        -kernel images/openwrt-x86-generic-vmlinuz \
+        -hda images/openwrt-x86-generic-rootfs-ext4.img \
         -append "root=/dev/sda console=ttyS0" \
         -enable-kvm \
         -daemonize \
