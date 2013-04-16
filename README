@@ -1,4 +1,10 @@
-关于此书的目的
-总结自己的一些工作经验，写成书的话便于整理，当然也有一些别的目的，
-比如想要跳槽的时候，总要留一些东西给前任公司，也算是有个交代，写得
-代码真是拼拼凑凑的不值钱，还不如写些文档留给后面的同事好呢！
+编译方法
+
+首先需要安装docbook相关的软件：
+sudo apt-get install docbook-xml docbook-xsl-doc-pdf docbook5-xml \
+docbook-xsl docbook-xsl-ns
+
+然后在当前目录运行：
+make
+
+
