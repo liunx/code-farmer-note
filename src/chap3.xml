@@ -268,6 +268,28 @@ make[1]:正在离开目录 `/home/liunx/Work/Buildroot/work/buildroot-2012.11/su
 bzImage  rootfs.ext2
       </screen>
     </para>
+    <para>
+      最后让我们看看<emphasis>buildroot</emphasis>的<quote>庐山真面目</quote>吧！
+      <screen>
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/DocBook/work/code-farmer-note/examples/chapter3$<userinput>cat buildroot.sh</userinput></prompt>
+
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
+
+/usr/local/bin/qemu-system-i386 \
+        -m 64M \
+        -kernel images/bzImage \
+        -hda images/rootfs.ext2 \
+        -append "root=/dev/sda console=ttyS0" \
+        -enable-kvm \
+        -nographic
+      </screen>
+      这里我们创建了一个到生成镜像的<emphasis>images</emphasis>目录的符号连接，这样可以把脚本和镜像分开，是我们的运行环境具有更好的灵活性。
+      <screen>
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/DocBook/work/code-farmer-note/examples/chapter3$<userinput>ls -la images</userinput></prompt>
+lrwxrwxrwx 1 liunx liunx 38  3月 25 16:03 images -> /media/VM/BuildRoot/work/router/images
+      </screen>
+    </para>
   </section>
   <!--
   <section>
