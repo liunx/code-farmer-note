@@ -1,0 +1,2 @@
+用configs/buildroot.config替换掉buildroot根目录下的.config文件，用configs/linux-3.6.6.config
+替换掉配置中指定的linux配置文件即可。
