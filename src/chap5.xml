@@ -28,6 +28,7 @@
             [*]   Advanced netfilter configuration
         Core Netfilter Configuration  ---&gt;
             [*] Netfilter connection tracking support
+            [*] Netfilter Xtables support (required for ip_tables)
             [*]   "NFLOG" target support
             [*]   "conntrack" connection tracking match support
             [*]   "state" match support
@@ -144,6 +145,7 @@ Fri Feb 15 13:23:12 2013
           fileref="../images/vnc-wanPC.png"/>
       </imageobject>
       <screen>
+<prompt>root@OpenWrt:/# </prompt><userinput>brctl delif br-lan eth0</userinput>
 <prompt>root@OpenWrt:/# </prompt><userinput>udhcpc -i eth0</userinput>
 udhcpc (v1.19.4) started
 Sending discover...
@@ -419,88 +421,88 @@ round-trip min/avg/max = 0.105/0.143/0.164 ms
 
 # DEFAULT POLICY
 SetDefaultPolicy() {
-	# Drop everything
-	iptables -P INPUT DROP
-	iptables -P OUTPUT DROP
-	iptables -P FORWARD DROP
+    # Drop everything
+    iptables -P INPUT DROP
+    iptables -P OUTPUT DROP
+    iptables -P FORWARD DROP
 }
 
 
 # FLUSH TABLES
 FlushTables() {
-	iptables -F -t nat
-	iptables -F -t mangle
-	iptables -F -t filter
-	iptables -X
+    iptables -F -t nat
+    iptables -F -t mangle
+    iptables -F -t filter
+    iptables -X
 }
 
 
 # ROUTING
 EnableRouting() {
-	echo 1 &gt; /proc/sys/net/ipv4/ip_forward
+    echo 1 &gt; /proc/sys/net/ipv4/ip_forward
 }
 
 DisableRouting() {
-	echo 0 &gt; /proc/sys/net/ipv4/ip_forward
+    echo 0 &gt; /proc/sys/net/ipv4/ip_forward
 }
 
 
 # FORWARDING
 SetForwardingRules() {
-	iptables -A FORWARD -i $IF_PUB -o $IF_PRV -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-	iptables -A FORWARD -i $IF_PRV -o $IF_PUB -j ACCEPT
+    iptables -A FORWARD -i $IF_PUB -o $IF_PRV -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    iptables -A FORWARD -i $IF_PRV -o $IF_PUB -j ACCEPT
 }
 
 
 # LOOPBACK
 SetLoopbackRules() {
-	# Allow everything
-	iptables -A INPUT -i lo -j ACCEPT
-	iptables -A OUTPUT -o lo -j ACCEPT
+    # Allow everything
+    iptables -A INPUT -i lo -j ACCEPT
+    iptables -A OUTPUT -o lo -j ACCEPT
 }
 
 
 # PRIVATE INTERFACES
 SetPrivateInterfaceRules() {
-	# Allow everything
-	iptables -A INPUT -i $IF_PRV -s $NET_PRV -j ACCEPT
-	iptables -A OUTPUT -o $IF_PRV -d $NET_PRV -j ACCEPT
+    # Allow everything
+        iptables -A INPUT -i $IF_PRV -s $NET_PRV -j ACCEPT
+    iptables -A OUTPUT -o $IF_PRV -d $NET_PRV -j ACCEPT
 }
 
 
 # PUBLIC INTERFACES
 SetPublicInterfaceRules() {
-	iptables -A INPUT -i $IF_PUB -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-	iptables -A OUTPUT -o $IF_PUB -j ACCEPT
+    iptables -A INPUT -i $IF_PUB -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    iptables -A OUTPUT -o $IF_PUB -j ACCEPT
 }
 
 
 # SOURCE NAT
 EnableSourceNAT() {
-	# Then source NAT everything else
-	iptables -t nat -A POSTROUTING -s $NET_PRV -o $IF_PUB -j SNAT --to $IP_PUB
+    # Then source NAT everything else
+    iptables -t nat -A POSTROUTING -s $NET_PRV -o $IF_PUB -j SNAT --to $IP_PUB
 }
 
 
 # Various ICMP
 SetICMP_Open() {
-	iptables -A INPUT -p icmp -j ACCEPT
+    iptables -A INPUT -p icmp -j ACCEPT
 }
 
 # enable dhcp for private network
 SetDHCP_Open() {
-	iptables -A INPUT -p udp --dport 67:68 --sport 67:68 -j ACCEPT
+    iptables -A INPUT -p udp --dport 67:68 --sport 67:68 -j ACCEPT
 }
 
 
 # Drop them all
 SetDropRules() {
-	# Reset tcp connection attempts on all other ports
-	# This is the standard TCP behaviour for a closed port. Reading
-	# suggests there is no value in stealthing ports and since some are
-	# open on this host it doesn't seem to matter. Therefore, let's be a 
-	# good TCP citizen
-	iptables -A INPUT -p tcp -j REJECT --reject-with tcp-reset
+    # Reset tcp connection attempts on all other ports
+    # This is the standard TCP behaviour for a closed port. Reading
+    # suggests there is no value in stealthing ports and since some are
+    # open on this host it doesn't seem to matter. Therefore, let's be a 
+    # good TCP citizen
+    iptables -A INPUT -p tcp -j REJECT --reject-with tcp-reset
 }
 
 
@@ -527,36 +529,36 @@ ANYWHERE=0.0.0.0/0
 # COMMAND LINE
 
 case "$1" in
-	start)
-		SetDefaultPolicy
-		FlushTables
-		EnableRouting
-		SetForwardingRules
-		SetLoopbackRules
-		SetPrivateInterfaceRules
-		SetPublicInterfaceRules
-		EnableSourceNAT
+    start)
+        SetDefaultPolicy
+        FlushTables
+        EnableRouting
+        SetForwardingRules
+        SetLoopbackRules
+        SetPrivateInterfaceRules
+        SetPublicInterfaceRules
+        EnableSourceNAT
 
-		SetDHCP_Open
-		SetICMP_Open
-		SetDropRules
-		;;
+        SetDHCP_Open
+        SetICMP_Open
+        SetDropRules
+        ;;
 
-	stop)
-		SetDefaultPolicy
-		FlushTables
+    stop)
+        SetDefaultPolicy
+        FlushTables
 
-		SetPrivateInterfaceRules
-		SetPublicInterfaceRules
-		;;
+        SetPrivateInterfaceRules
+        SetPublicInterfaceRules
+        ;;
 
-	restart)
-		$0 stop
-		$0 start
-		;;
+    restart)
+        $0 stop
+        $0 start
+        ;;
 
-	*)
-		;;
+    *)
+        ;;
 esac
         </screen>
       </section>
