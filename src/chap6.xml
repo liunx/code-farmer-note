@@ -1,4 +1,39 @@
 <chapter xml:id="chapter6" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
   xmlns:xlink='http://www.w3.org/1999/xlink'>
-  <title>防火墙高级篇</title>
+  <title>ALG（应用层地址网关）</title>
+  <para>
+    <emphasis>应用层地址网关</emphasis>主要完成了对应用层报文的处理，通常情况下NAT只对报头中的IP，PORT信息进行转换，不对应用层数据载荷中的字段进行分析，如果时能了ALG，那么在识别了相应报文之后便会对IP报头以外的载荷信息进行解析，然后进行地址转换，重新计算校验和。
+  </para>
+  <para>具体分析参考这里<ulink url="http://simonsec.blog.51cto.com/875864/197090"></ulink></para>
+  <section>
+    <title>准备工作</title>
+    <para><emphasis>ALG</emphasis>支持包括<emphasis>H.323</emphasis>、<emphasis>SIP</emphasis>、<emphasis>FTP</emphasis>、<emphasis>RTSP</emphasis>、等协议，但是许多协议我们无法在实验环境中模拟，这个我们选择<emphasis>FTP</emphasis>的功能进行模拟验证。
+    </para>
+    <para>
+      <emphasis>FTP主动模式</emphasis>的特殊性，使得<emphasis>NAT</emphasis>不能正确的进行转换，所以需要内核添加<emphasis>ALG</emphasis>模块进行支持，所以需要配置一下内核：
+    </para>
+    <para>
+      详细介绍参考这里<ulink url="http://kb.cnblogs.com/page/71531/"></ulink>
+    </para>
+    <screen>
+[*] Enable loadable module support  --->
+  [*]   Module unloading
+    </screen>
+    <para>
+      首先打开内核模块化功能，这样方便我们验证。
+    </para>
+    <screen>
+[*] Networking support  --->
+  Networking options  --->
+    [*] Network packet filtering framework (Netfilter)  --->
+      Core Netfilter Configuration  --->
+        &lt;M&gt;   FTP protocol support
+    </screen>
+    <para>
+      这里我们把<emphasis>nf_conntrack_ftp.ko</emphasis>和<emphasis>nf_nat_ftp.ko</emphasis>连个模块编译进来，目的就是验证他的<emphasis>ALG</emphasis>功能。
+    </para>
+  </section>
+  <section>
+    <title>验证阶段</title>
+  </section>
 </chapter>
