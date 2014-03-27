@@ -30,10 +30,335 @@
         &lt;M&gt;   FTP protocol support
     </screen>
     <para>
-      这里我们把<emphasis>nf_conntrack_ftp.ko</emphasis>和<emphasis>nf_nat_ftp.ko</emphasis>连个模块编译进来，目的就是验证他的<emphasis>ALG</emphasis>功能。
+      这里我们把<emphasis>nf_conntrack_ftp.ko</emphasis>和<emphasis>nf_nat_ftp.ko</emphasis>两个模块编译进来，目的就是验证他的<emphasis>ALG</emphasis>功能。
     </para>
   </section>
   <section>
     <title>验证阶段</title>
+    <para>
+      好了，配置完成了，下面开始验证<emphasis>ALG</emphasis>的作用了。
+    </para>
+    <section>
+      <title>目标描述</title>
+      <para>
+        下面请看我们的设计图：
+      <imageobject>
+        <imagedata align="right" width="6in" format="PNG"
+          fileref="../images/simple-firewall.png"/>
+      </imageobject>
+      黄色的部分是通过<emphasis>vde_switch</emphasis>和<emphasis>slirpvde</emphasis>模拟的交换机网络，这里<emphasis>slirpvde</emphasis>起到分配<emphasis>IP地址</emphasis>的作用。红色部分就是我们的男主角<quote>老章</quote>了，蓝色部分就是由<emphasis>openwrt</emphasis>友情出演的<emphasis>wan</emphasis>侧主机和<emphasis>lan</emphasis>侧主机。
+      </para>
+      <para>
+        好，所有演员就位了，该是介绍剧情的时候了，我们的剧情很简单，那就是
+      <orderedlist>
+        <listitem><emphasis>lanPC</emphasis>通过ftp主动模式实现对<emphasis>wanPC</emphasis>的访问</listitem>
+        <listitem>验证内核打开或关闭<emphasis>ALG</emphasis>功能对<emphasis>ftp主动模式</emphasis>操作的影响</listitem>
+        <listitem>验证内核打开或关闭<emphasis>ALG</emphasis>功能对<emphasis>ftp被动模式</emphasis>操作的影响</listitem>
+      </orderedlist>
+      </para>
+    </section>
+    <section>
+      <title>创建交换机网络</title>
+      <screen>
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/DocBook/work/code-farmer-note/examples/chapter6$ </prompt><userinput>cat switch.sh</userinput>
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
+
+echo "begin switch..."
+vde_switch --daemon --sock /tmp/switch --mgmt /tmp/switch.mgmt
+slirpvde -d -s /tmp/switch -dhcp
+echo "OK"
+      </screen>
+      <para>
+        这个脚本很简单，我们就不做介绍了，唯一需要强调的是<quote>--mgmt /tmp/switch.mgmt</quote>，
+        这个选项很重要哦，这里我们暂且留个悬念吧。
+      </para>
+      <para>
+        我们首先运行<emphasis>switch.sh</emphasis>，这样其他的设备才能接入网络
+      </para>
+      <screen>
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/DocBook/work/code-farmer-note/examples/chapter6$ </prompt><userinput>./switch.sh</userinput>
+      </screen>
+    </section>
+    <section>
+      <title>创建<emphasis>wan侧PC</emphasis></title>
+      <screen>
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/DocBook/work/code-farmer-note/examples/chapter6$ </prompt><userinput>cat wanPC.sh</userinput>
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
+
+/usr/local/bin/qemu-system-i386 \
+        -m 64M \
+        -kernel images/openwrt-x86-generic-vmlinuz \
+        -hda images/openwrt-x86-generic-rootfs-ext4.img \
+        -append "root=/dev/sda console=ttyS0" \
+        -enable-kvm \
+        -daemonize \
+        -vnc :53 \
+        -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:41 \
+        -net vde,sock=/tmp/switch
+      </screen>
+      <para>
+        仅仅是创建了启动配置还不够，我们还需要更改<emphasis>openwrt</emphasis>的网络配置和安装<emphasis>ftp</emphasis>服务和客户端程序：
+      </para>
+      <para>
+        首先启动脚本，然后<emphasis>vnc</emphasis>登录进去，<emphasis>vnc</emphasis>登录有多种方式，这里我们选择通过<keycap>Alt+F2</keycap>来调用<emphasis>vnc</emphasis>程序，这样可以避免开启多个终端而带来的不便。
+      </para>
+      <imageobject>
+        <imagedata align="right" width="6in" format="PNG"
+          fileref="../images/vncviewer.png"/>
+      </imageobject>
+      <para>
+        登录进去后，输入用户名<emphasis>root</emphasis>即可登录系统了，接下来我们开始做一些配置了。
+      </para>
+      <screen>
+<prompt>root@OpenWrt:/# </prompt><userinput>cat /etc/config/network</userinput>
+
+# Copyright (C) 2006 OpenWrt.org
+
+config interface loopback
+        option ifname   lo
+        option proto    static
+        option ipaddr   127.0.0.1
+        option netmask  255.0.0.0
+
+config interface lan
+        option ifname   eth1
+        option type     bridge
+        option proto    static
+        option ipaddr   192.168.1.1
+        option netmask  255.255.255.0
+
+config interface wan
+        option ifname   eth0
+        option proto    dhcp
+      </screen>
+      <para>
+        修改完成重启或者<command>/etc/init.d/network restart</command>使配置生效。
+      </para>
+      <screen>
+<prompt>root@OpenWrt:/# </prompt><userinput>opkg update</userinput>
+<prompt>root@OpenWrt:/# </prompt><userinput>opkg install ncftp</userinput>
+<prompt>root@OpenWrt:/# </prompt><userinput>opkg install vsftpd</userinput>
+      </screen>
+      <para>
+        <emphasis>vsftpd</emphasis>的默认配置就可以使用，不过需要我们为<emphasis>root</emphasis>用户添加账户密码才可以正常登录
+      </para>
+      <screen>
+<prompt>root@OpenWrt:/# </prompt><userinput>passwd root</userinput>
+Changing password for root
+New password:
+Bad password: too weak
+Retype password:
+Password for root changed by root
+      </screen>
+      <para>
+        好了， <emphasis>openwrt</emphasis>的设置完成了，由于我们的<emphasis>lanPC</emphasis>和<emphasis>wanPC</emphasis>共用同一个<emphasis>openwrt</emphasis>的镜像，所以我们最好<emphasis>poweroff</emphasis>一下，然后重新打来，是配置保存到文件里。
+      </para>
+    </section>
+    <section>
+      <title>创建路由器</title>
+      <para>这里我们选用<emphasis>vnc</emphasis>远程桌面连接，而不是串口输出了，所以要对<emphasis>buildroot</emphasis>的参数做一些修改：</para>
+      <screen>
+System configuration  --->
+    (tty1) Port to run a getty (login prompt) on
+      </screen>
+      <screen>
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/DocBook/work/code-farmer-note/examples/chapter6$ </prompt><userinput>cat router.sh</userinput>
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
+
+/usr/local/bin/qemu-system-i386 \
+        -m 64M \
+        -kernel images/bzImage \
+        -hda  images/rootfs.ext2 \
+        -append "root=/dev/sda console=ttyS0" \
+        -enable-kvm \
+        -daemonize \
+        -vnc :51 \
+        -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:01 \
+        -net vde,vlan=0,sock=/tmp/switch \
+        -net nic,vlan=1,model=e1000,macaddr=52:54:00:12:34:11 \
+        -net vde,vlan=1,sock=/tmp/lan1.ctl[] \
+        -net nic,vlan=2,model=e1000,macaddr=52:54:00:12:34:12 \
+        -net vde,vlan=2,sock=/tmp/lan2.ctl[] \
+        -net nic,vlan=3,model=e1000,macaddr=52:54:00:12:34:13 \
+        -net vde,vlan=3,sock=/tmp/lan3.ctl[] \
+        -net nic,vlan=4,model=e1000,macaddr=52:54:00:12:34:14 \
+        -net vde,vlan=4,sock=/tmp/lan4.ctl[]
+      </screen>
+      <para>
+        好，启动路由器，我们还要对网络接口做一下调整：
+      </para>
+      <screen>
+<prompt># </prompt><userinput>cat /etc/network/interface</userinput>
+# Configure Loopback
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet dhcp
+
+auto br0
+iface br0 inet static
+address 192.168.1.1
+netmask 255.255.255.0
+broadcast 192.168.1.255
+      </screen>
+      <para>
+        设置完配置后，别忘了重启设备或者<command>/etc/init.d/S40network restart</command>。
+      </para>
+    </section>
+    <section>
+      <title>创建<emphasis>lan侧PC</emphasis></title>
+      <para>
+        好了，路由器有了，我们接下来再添加一个PC连接到路由器的<emphasis>lan侧</emphasis>。
+        <screen>
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/DocBook/work/code-farmer-note/examples/chapter6$ </prompt><userinput>cat lanPC.sh</userinput>
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
+
+/usr/local/bin/qemu-system-i386 \
+        -m 64M \
+        -kernel images/openwrt-x86-generic-vmlinuz \
+        -hda images/openwrt-x86-generic-rootfs-ext4.img \
+        -append "root=/dev/sda console=ttyS0" \
+        -enable-kvm \
+        -daemonize \
+        -vnc :52 \
+        -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:31 \
+        -net vde,vlan=0,sock=/tmp/lan1.ctl
+        </screen>
+        这里，我们选择路由器中任意一个<emphasis>lanx.ctl</emphasis>接口就可以了。
+      </para>
+    </section>
+    <section>
+      <title>开始实验</title>
+      <para>
+        一切准备就绪，见证奇迹的时刻到了。
+      </para>
+      <para>
+        登录<emphasis>wanPC</emphasis>，启动<emphasis>vsftpd</emphasis>服务<command>/etc/init.d/vsftpd start</command>，同时关闭默认的防火墙规则<command>/etc/init.d/firewall stop</command>，否则我们将无法访问<emphasis>wanPC</emphasis>的服务。
+      </para>
+      <para>
+        接下来，我们开始从<emphasis>lanPC</emphasis>ftp到<emphasis>wanPC</emphasis>上，登录<emphasis>lanPC</emphasis>，执行ftp操作：
+      </para>
+      <screen>
+<prompt>root@OpenWrt:/# </prompt><userinput>ncftp -c root 10.0.2.15</userinput>
+NcFTP 3.2.5 (Feb 02, 2011) by Mike Gleason (http://www.NcFTP.com/contact/).
+Connecting to 10.0.2.15...
+(vsFTPd 3.0.2)
+Logging in...
+Password requested by 10.0.2.15 for user "root".
+
+    Please specify the password.
+
+Password: ******
+
+Login successful.
+Logged in to 10.0.2.15.
+ncftp /root > ls
+List failed.
+ncftp /root > ls /lib
+List failed.
+ncftp /root >
+      </screen>
+      <para>
+        在主动模式中，我们使用<emphasis>ls</emphasis>查看目录时失败了，那么我们启用<emphasis>ALG</emphasis>功能看看是什么效果。登录<emphasis>router</emphasis>，然后执行：
+      </para>
+      <screen>
+<prompt># </prompt><userinput>modprobe nf_nat_ftp</userinput>
+<prompt># </prompt><userinput>lsmod</userinput>
+Module                Size   Used by           Not tainted
+nf_nat_ftp            1092   0        
+nf_conntrack_ftp      4836   1 nf_nat_ftp
+      </screen>
+      <para>
+        好了，模块加载进去了，我再看看效果怎么样吧：
+      </para>
+      <screen>
+<prompt>root@OpenWrt:/# </prompt><userinput>ncftp -c root 10.0.2.15</userinput>
+
+NcFTP 3.2.5 (Feb 02, 2011) by Mike Gleason (http://www.NcFTP.com/contact/).
+Connecting to 10.0.2.15...
+(vsFTPd 3.0.2)
+Logging in...
+Password requested by 10.0.2.15 for user "root".
+
+    Please specify the password.
+
+Password: ******
+
+Login successful.
+Logged in to 10.0.2.15.
+ncftp /root > ls
+ncftp /root > cd /
+Directory successfully changed.
+ncftp / > ls
+bin/         lib/         overlay/     root/        tmp/         www/
+dev/         lost+found/  proc/        sbin/        usr/
+etc/         mnt/         rom/         sys/         var@
+ncftp / >
+      </screen>
+      <para>
+        OK，可以正常访问了！
+      </para>
+    </section>
+    <section>
+      <title>ftp ALG功能分析</title>
+      <para>
+        上一节中，我们验证了ftp<emphasis>ALG</emphasis>功能的作用，但是忙活了半天，我们也只是知其然不知其所以然，因此需要分析一下<emphasis>ALG</emphasis>都做了哪些工作，本文的并不是以分析内核源代码见长，所以我们可以通过分析网络数据包来一探究竟。
+      </para>
+      <para>
+        那么如何抓包呢，问题随之而来，还记得神秘的<quote>--mgmt /tmp/switch.mgmt</quote>吗？揭开谜底的时刻到了。
+      </para>
+      <screen>
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/DocBook/work/code-farmer-note/examples/chapter6$ </prompt>
+<userinput>vdeterm /tmp/switch.mgmt</userinput>
+VDE switch V.2.3.2
+(C) Virtual Square Team (coord. R. Davoli) 2005,2006,2007 - GPLv2
+
+vde[/tmp/switch.mgmt]: plugin/add /usr/local/lib/vde2/plugins/pdump.so
+
+Success
+vde[/tmp/switch.mgmt]: pdump/filename hello.cap
+
+dumpfile=hello.cap
+Success
+vde[/tmp/switch.mgmt]: pdump/active 1
+
+Success
+vde[/tmp/switch.mgmt]: pdump/active 0
+
+Success
+vde[/tmp/switch.mgmt]: logout
+      </screen>
+      <para>
+        <emphasis>vde_switch</emphasis>有一个抓包的模块，我们首先通过<emphasis>vdeterm</emphasis>登录进去，然后加载<emphasis>pdump.so</emphasis>模块，指定生成抓包的文件名称并激活，这时，<emphasis>vde_switch</emphasis>就会在你当前的目录生成抓包文件，这样就开始抓包了，抓包完成后关闭并登出，然后通过<emphasis>wiresharks</emphasis>打开抓包文件并分析之，怎么样，是不是很赞的功能？
+      </para>
+      <para>
+        谈完使用方法，就开始抓包吧，我们抓两个包，一个包是在打开<emphasis>ALG</emphasis>功能之前的抓包，另一个是打开<emphasis>ALG</emphasis>功能之后的抓包。
+      </para>
+      <para>
+        抓包完成，下面让我们看看两个抓包的区别吧：
+      </para>
+      <imageobject>
+        <imagedata align="right" width="6in" format="PNG"
+          fileref="../images/before_alg.png"/>
+      </imageobject>
+      <para>
+        开启<emphasis>ALG</emphasis>功能之前的抓包
+      </para>
+      <imageobject>
+        <imagedata align="right" width="6in" format="PNG"
+          fileref="../images/after_alg.png"/>
+      </imageobject>
+      <para>
+        开启<emphasis>ALG</emphasis>功能之后的抓包
+      </para>
+      <para>
+        对比两个抓包可以看出，<emphasis>ALG</emphasis>对协议内的地址做了转换！
+      </para>
+    </section>
   </section>
 </chapter>
