@@ -247,7 +247,6 @@ NET_PRV=192.168.1.0/24
 
 # Public interface
 IF_PUB=eth0
-IP_PUB=10.0.0.1
 NET_PUB=10.0.0.0/24
 
 # Others
@@ -386,10 +385,10 @@ round-trip min/avg/max = 0.105/0.143/0.164 ms
           接下来，我们要为私有网络添加路由规则，已完成我们的第二个目标，即私有网络能够访问外部网络。
         </para>
         <screen>
-<prompt># </prompt><userinput>iptables -t nat -A POSTROUTING -s $NET_PRV -o $IF_PUB -j SNAT --to $IP_PUB</userinput>
+<prompt># </prompt><userinput>iptables -t nat -A POSTROUTING -s $NET_PRV -o $IF_PUB -j MASQUERADE</userinput>
         </screen>
         <para>
-          这里，我们需要网络地址<emphasis>NAT</emphasis>，并且我们的私有地址是无法被外部网络认证的，因此我们需要把私有地址转换成公网地址，这样才能与外部网络传递数据，所以这种对源地址做转换的模式叫源地址转换<emphasis>SNAT</emphasis>。
+          这里，我们需要网络地址<emphasis>NAT</emphasis>，并且我们的私有地址是无法被外部网络认证的，因此我们需要把私有地址转换成公网地址，这样才能与外部网络传递数据。
         </para>
       </section>
       <section>
@@ -480,7 +479,7 @@ SetPublicInterfaceRules() {
 # SOURCE NAT
 EnableSourceNAT() {
     # Then source NAT everything else
-    iptables -t nat -A POSTROUTING -s $NET_PRV -o $IF_PUB -j SNAT --to $IP_PUB
+    iptables -t nat -A POSTROUTING -s $NET_PRV -o $IF_PUB -j MASQUERADE
 }
 
 
@@ -520,7 +519,6 @@ NET_PRV=192.168.1.0/24
 
 # Public interface
 IF_PUB=eth0
-IP_PUB=10.0.2.16
 NET_PUB=10.0.2.0/24
 
 # Others
