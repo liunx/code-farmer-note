@@ -1,318 +1,242 @@
 <chapter xml:id="chapter7" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
   xmlns:xlink='http://www.w3.org/1999/xlink'>
-  <title>虚拟私有网络</title>
-  <para>虚拟私有网络就是我们常说的<emphasis>VPN</emphasis>，如果你对<emphasis>VPN</emphasis>一无所知的话，那么我们打一个简单的比方就是--<quote>深入敌人内部</quote>。显然，在<quote>敌人内部</quote>，我们就需要特殊的渠道进行情报交流了，这个渠道就是<quote>IPSec</quote>和<quote>l2tp</quote>了，并且两者需要配置使用才能发挥最大的功效。<quote>IPSec</quote>用来对数据进行加密，<quote>l2tp</quote>则用来建立通道。</para>
+  <title>高级NAT配置</title>
+  <para>
+    <emphasis>NAT</emphasis>即网络地址转换，更直白一些就是通过地址/端口的映射来实现内网/外网的互相访问，这里包括两个方面，一方面是增强访问，比如<emphasis>虚拟服务器</emphasis>，一方面是限制访问，比如<emphasis>DMZ配置</emphasis>和<emphasis>一对一地址映射</emphasis>。
+  </para>
   <section>
-    <title>L2TP连接</title>
-    <para>其实，通过<emphasis>l2tp</emphasis>服务，我们就可以建立<emphasis>VPN</emphasis>通道了，但是由于<emphasis>l2tp</emphasis>没有加密，所以我们的通信是暴露的，很容易被窃取的，所以有安全风险的，但是实验中我们可以通过<emphasis>l2tp</emphasis>来了解<emphasis>VPN</emphasis>究竟是如何工作的。</para>
+    <title>准备工作</title>
+    <para>
+      这里我们沿用第六章里的配置即可。
+    </para>
     <section>
-      <title>准备工作</title>
-      <para>搭建基于<emphasis>l2tp</emphasis>的VPN连接，我们需要至少一个服务端 -- 拥有公共的地址，和一个客户端来创建连接。网络拓扑图如下：</para>
-    <imageobject>
-      <imagedata align="left" width="6in" format="PNG"
-        fileref="../images/chap7-l2tp.png"/>
-    </imageobject>
-    <para>从图中可以看出，私有网络A和B是两个独立的内部网络，无法互访，这时，我们需要通过<emphasis>VPN</emphasis>来让他们实现互访，这样，无论两个网络在物理上相隔万水千山，但在实际通信中确实近在咫尺，这也就是<emphasis>VPN</emphasis>的作用之所在了。</para>
-    <para>好，接下来，让我们看看如何把我们的<emphasis>buildroot</emphasis>的系统，改造成<emphasis>l2tp</emphasis>服务器吧</para>
-    <section>
-      <title>配置内核</title>
-      <para>首先，让我们配置内核，<emphasis>linux</emphasis>支持<emphasis>l2tp</emphasis>协议的，但是这里我们使用的是<emphasis>xl2tpd</emphasis>，他没有使用<emphasis>linux</emphasis>的内核模块，而是把协议处理做到了<emphasis>用户空间</emphasis>，然而我们最终需要<emphasis>ppp</emphasis>完成拨号连接，而<emphasis>pppd</emphasis>需要内核模块的支持，所以<quote>Let's do it!</quote></para>
-      <screen>
-Device Drivers  --->
-    [*] Network device support  --->
-        [*]   PPP (point-to-point protocol) support             
-        [*]     PPP support for async serial ports              
-      </screen>
-      <para>我们至少打开这两个选项就可以了，其他的选项以后也许用得着。</para>
+      <title>目标描述</title>
+      <para>
+        下面请看我们的设计图：
+      </para>
+      <imageobject>
+        <imagedata align="right" width="6in" format="PNG"
+          fileref="../images/high-grade-nat.png"/>
+      </imageobject>
+      <para>
+        相对于前面几章，我们在lan侧添加了<emphasis>serverPC</emphasis>。
+      </para>
     </section>
     <section>
-      <title>配置l2tp服务端</title>
-      <para>首先选取<emphasis>xl2tpd</emphasis>软件包和<emphasis>ppp</emphasis>包：</para>
+      <title>创建交换机网络</title>
       <screen>
-Package Selection for the target  --->
-    Networking applications  --->
-        [*] pppd   
-        [*] xl2tp
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/DocBook/work/code-farmer-note/examples/chapter7$ </prompt><userinput>cat switch.sh</userinput>
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
+
+echo "begin switch..."
+vde_switch --daemon --sock /tmp/switch --mgmt /tmp/switch.mgmt
+slirpvde -d -s /tmp/switch -dhcp
+echo "OK"
       </screen>
-      <para>服务端我们采用<emphasis>buildroot</emphasis>，配置文件如下：</para>
+      <para>
+        我们首先运行<emphasis>switch.sh</emphasis>，这样其他的设备才能接入网络。
+      </para>
       <screen>
-<prompt># </prompt><userinput>cat /etc/xl2tpd/xl2tpd.conf</userinput>
-[global]
-port = 1701
-auth file = /etc/xl2tpd/xl2tp-secrets
-access control = no
-
-[lns default]
-exclusive = yes
-ip range = 112.168.254.202-112.168.254.210
-hidden bit = no
-local ip = 112.168.254.200
-length bit = yes
-;require authentication = yes
-name = VersaLink
-;ppp debug = yes
-pppoptfile = /etc/ppp/options.xl2tpd
-
-<prompt># </prompt><userinput>cat /etc/ppp/options.xl2tpd</userinput>
-#
-
-lock
-noauth
-debug
-#dump
-logfd 2
-logfile /var/log/xl2tpd.log
-noccp
-novj
-novjccomp
-nopcomp
-noaccomp
-
-<prompt># </prompt><userinput>cat /etc/ppp/chap-secrets</userinput>
-#USERNAME  PROVIDER  PASSWORD  IPADDRESS
-admin           *       admin           *
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/DocBook/work/code-farmer-note/examples/chapter7$ </prompt><userinput>./switch.sh</userinput>
       </screen>
     </section>
     <section>
-      <title>配置l2tp客户端</title>
-      <para>客户端由<emphasis>openwrt</emphasis>友情出演，上配置文件：</para>
+      <title>创建<emphasis>wan侧PC</emphasis></title>
       <screen>
-<prompt>root@OpenWrt:/# </prompt><userinput>cat /etc/xl2tpd/xl2tpd.conf</userinput>
-[global]
-port = 1701
-auth file = /etc/xl2tpd/xl2tp-secrets
-access control = no
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/DocBook/work/code-farmer-note/examples/chapter7$ </prompt><userinput>cat wanPC.sh</userinput>
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
 
-;[lns default]
-;exclusive = yes
-;ip range = 192.168.254.202-192.168.254.210
-;lac = 10.0.1.2
-;hidden bit = no
-;local ip = 192.168.254.200
-;length bit = yes
-;refuse authentication = yes
-;name = VersaLink
-;ppp debug = yes
-;pppoptfile = /etc/ppp/options.xl2tpd
-
-[lac left]
-lns = 10.0.2.16
-require authentication = yes
-name = VersaLink
-;ppp debug = yes
-pppoptfile = /etc/ppp/options.xl2tpd
-
-<prompt>root@OpenWrt:/# </prompt><userinput>cat /etc/ppp/options.xl2tpd</userinput>
-#
-
-name admin
-password admin
-lock
-noauth
-debug
-#dump
-logfd 2
-logfile /var/log/xl2tpd.log
-noccp
-novj
-novjccomp
-nopcomp
-noaccomp
-
+/usr/local/bin/qemu-system-i386 \
+        -m 64M \
+        -kernel images/openwrt-x86-generic-vmlinuz \
+        -hda images/openwrt-x86-generic-rootfs-ext4.img \
+        -append "root=/dev/sda console=ttyS0" \
+        -enable-kvm \
+        -daemonize \
+        -vnc :61 \
+        -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:41 \
+        -net vde,sock=/tmp/switch
       </screen>
-      <warning>注意，<emphasis>lns</emphasis>就是客户端将要连接的服务端地址，这里根据实际情况填写，请勿<quote>生搬硬套</quote>，而是<quote>照猫画虎</quote>，变通一下才对！</warning>
-    </section>
     </section>
     <section>
-      <title>开始实验！</title>
-      <para>好了，准备工作完成了，下面开始实验了，你准备好了吗？</para>
-      <para>首先让我们打开服务端：</para>
+      <title>创建路由器</title>
+      <para>这里我们选用<emphasis>vnc</emphasis>远程桌面连接，而不是串口输出了，所以要对<emphasis>buildroot</emphasis>的参数做一些修改：</para>
       <screen>
-<prompt># </prompt><userinput>mkdir /var/run/xl2tpd</userinput>
-<prompt># </prompt><userinput>mknod /dev/ppp c 108 0</userinput>
-<prompt># </prompt><userinput>xl2tpd -D &amp;</userinput>
-# xl2tpd[113]: setsockopt recvref[30]: Protocol not available
-xl2tpd[113]: This binary does not support kernel L2TP.
-xl2tpd[113]: xl2tpd version xl2tpd-1.3.1 started on buildroot PID:113
-xl2tpd[113]: Written by Mark Spencer, Copyright (C) 1998, Adtran, Inc.
-xl2tpd[113]: Forked by Scott Balmos and David Stipp, (C) 2001
-xl2tpd[113]: Inherited by Jeff McAdams, (C) 2002
-xl2tpd[113]: Forked again by Xelerance (www.xelerance.com) (C) 2006
-xl2tpd[113]: Listening on IP address 0.0.0.0, port 1701
+System configuration  --->
+    (tty1) Port to run a getty (login prompt) on
       </screen>
-      <para>这里，我们首先创建<emphasis>/var/run/xl2tpd</emphasis>目录，然后创建<emphasis>/dev/ppp</emphasis>设备节点，最后以调试模式运行。</para>
-      <para>接下来创建连接：</para>
       <screen>
-<prompt>root@OpenWrt:/# </prompt><userinput>/etc/init.d/xl2tpd restart</userinput>
-<prompt>root@OpenWrt:/# </prompt><userinput>echo "c left" > /var/run/xl2tpd/l2tp-control</userinput>
-<prompt>root@OpenWrt:/# </prompt><userinput>ifconfig</userinput>
-eth0      Link encap:Ethernet  HWaddr 12:34:56:78:1A:00
-          inet addr:10.0.2.16  Bcast:10.0.2.255  Mask:255.255.255.0
-          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
-          RX packets:4261 errors:0 dropped:0 overruns:0 frame:0
-          TX packets:4304 errors:0 dropped:0 overruns:0 carrier:0
-          collisions:0 txqueuelen:1000
-          RX bytes:267068 (260.8 KiB)  TX bytes:261204 (255.0 KiB)
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/DocBook/work/code-farmer-note/examples/chapter7$ </prompt><userinput>cat router.sh</userinput>
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
 
-lo        Link encap:Local Loopback
-          inet addr:127.0.0.1  Mask:255.0.0.0
-          UP LOOPBACK RUNNING  MTU:16436  Metric:1
-          RX packets:20 errors:0 dropped:0 overruns:0 frame:0
-          TX packets:20 errors:0 dropped:0 overruns:0 carrier:0
-          collisions:0 txqueuelen:0
-          RX bytes:3160 (3.0 KiB)  TX bytes:3160 (3.0 KiB)
-
-ppp0      Link encap:Point-to-Point Protocol
-          inet addr:112.168.254.202  P-t-P:112.168.254.200  Mask:255.255.255.255
-          UP POINTOPOINT RUNNING NOARP MULTICAST  MTU:1500  Metric:1
-          RX packets:3 errors:0 dropped:0 overruns:0 frame:0
-          TX packets:3 errors:0 dropped:0 overruns:0 carrier:0
-          collisions:0 txqueuelen:3
-          RX bytes:30 (30.0 B)  TX bytes:30 (30.0 B)
+/usr/local/bin/qemu-system-i386 \
+        -m 64M \
+        -kernel images/bzImage \
+        -hda  images/rootfs.ext2 \
+        -append "root=/dev/sda console=ttyS0" \
+        -enable-kvm \
+        -daemonize \
+        -vnc :51 \
+        -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:01 \
+        -net vde,vlan=0,sock=/tmp/switch \
+        -net nic,vlan=1,model=e1000,macaddr=52:54:00:12:34:11 \
+        -net vde,vlan=1,sock=/tmp/lan1.ctl[] \
+        -net nic,vlan=2,model=e1000,macaddr=52:54:00:12:34:12 \
+        -net vde,vlan=2,sock=/tmp/lan2.ctl[] \
+        -net nic,vlan=3,model=e1000,macaddr=52:54:00:12:34:13 \
+        -net vde,vlan=3,sock=/tmp/lan3.ctl[] \
+        -net nic,vlan=4,model=e1000,macaddr=52:54:00:12:34:14 \
+        -net vde,vlan=4,sock=/tmp/lan4.ctl[]
       </screen>
-      <para><emphasis>openwrt</emphasis>有自启动脚本，所以用起来比较方便一点，如果看到<emphasis>ppp0</emphasis>了，那么我们的连接就创建成功了！</para>
-      <para>接下来让我们看看服务端有哪些反映吧：</para>
+      <para>
+        好，启动路由器，我们还要对网络接口做一下调整：
+      </para>
       <screen>
-# xl2tpd[113]: control_finish: Peer requested tunnel 12405 twice, ignoring second one.
-xl2tpd[113]: Connection established to 10.0.2.16, 1701.  Local: 43197, Remote: 12405 (ref=0/0).
-LNS session is 'default'
-xl2tpd[113]: control_finish: Warning: Peer did not specify transmit speed
-xl2tpd[113]: start_pppd: I'm running:
-xl2tpd[113]: "/usr/sbin/pppd"
-xl2tpd[113]: "passive"
-xl2tpd[113]: "nodetach"
-xl2tpd[113]: "112.168.254.200:112.168.254.202"
-xl2tpd[113]: "name"
-xl2tpd[113]: "VersaLink"
-xl2tpd[113]: "file"
-xl2tpd[113]: "/etc/ppp/options.xl2tpd"
-xl2tpd[113]: "ipparam"
-xl2tpd[113]: "10.0.2.16"
-xl2tpd[113]: "/dev/pts/0"
-xl2tpd[113]: Call established with 10.0.2.16, Local: 14252, Remote: 62314, Serial: 1
+<prompt># </prompt><userinput>cat /etc/network/interface</userinput>
+# Configure Loopback
+auto lo
+iface lo inet loopback
 
-<prompt># </prompt><userinput>ifconfig ppp0</userinput>
-ppp0      Link encap:Point-to-Point Protocol
-          inet addr:112.168.254.200  P-t-P:112.168.254.202  Mask:255.255.255.255
-          UP POINTOPOINT RUNNING NOARP MULTICAST  MTU:1500  Metric:1
-          RX packets:3 errors:0 dropped:0 overruns:0 frame:0
-          TX packets:3 errors:0 dropped:0 overruns:0 carrier:0
-          collisions:0 txqueuelen:3
-          RX bytes:30 (30.0 B)  TX bytes:30 (30.0 B)
+auto eth0
+iface eth0 inet dhcp
+
+auto br0
+iface br0 inet static
+address 192.168.1.1
+netmask 255.255.255.0
+broadcast 192.168.1.255
       </screen>
+      <para>
+        设置完配置后，别忘了重启设备或者<command>/etc/init.d/S40network restart</command>。
+      </para>
+    </section>
+    <section>
+      <title>创建<emphasis>lan侧PC</emphasis></title>
+      <para>
+        好了，路由器有了，我们接下来再添加一个PC连接到路由器的<emphasis>lan侧</emphasis>。
+        <screen>
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/DocBook/work/code-farmer-note/examples/chapter7$ </prompt><userinput>cat lanPC.sh</userinput>
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
+
+/usr/local/bin/qemu-system-i386 \
+        -m 64M \
+        -kernel images/openwrt-x86-generic-vmlinuz \
+        -hda images/openwrt-x86-generic-rootfs-ext4.img \
+        -append "root=/dev/sda console=ttyS0" \
+        -enable-kvm \
+        -daemonize \
+        -vnc :52 \
+        -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:31 \
+        -net vde,vlan=0,sock=/tmp/lan1.ctl
+        </screen>
+        这里，我们选择路由器中任意一个<emphasis>lanx.ctl</emphasis>接口就可以了。
+      </para>
+    </section>
+    <section>
+      <title>创建<emphasis>serverPC</emphasis></title>
+      <para>
+        好了，路由器有了，我们接下来再添加一个PC连接到路由器的<emphasis>lan侧</emphasis>。
+        <screen>
+<prompt>liunx@liunx-G41MT-S2PT:~/Work/DocBook/work/code-farmer-note/examples/chapter7$ </prompt><userinput>cat lanPC.sh</userinput>
+#!/bin/bash -
+set -o nounset                              # Treat unset variables as an error
+
+/usr/local/bin/qemu-system-i386 \
+        -m 64M \
+        -kernel images/openwrt-x86-generic-vmlinuz \
+        -hda images/openwrt-x86-generic-rootfs-ext4.img \
+        -append "root=/dev/sda console=ttyS0" \
+        -enable-kvm \
+        -daemonize \
+        -vnc :53 \
+        -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:32 \
+        -net vde,vlan=0,sock=/tmp/lan2.ctl
+        </screen>
+        这里，我们选择路由器中任意一个<emphasis>lan2.ctl</emphasis>接口就可以了。
+      </para>
     </section>
   </section>
   <section>
-    <title>创建IPSEC连接</title>
-    <para><emphasis>ipsec</emphasis>常见的软件有<emphasis>ipsec-tools</emphasis>、<emphasis>openswan</emphasis>、<emphasis>strongswan</emphasis>、<emphasis>openvpn</emphasis>等，这里我们先来介绍一下如何使用<emphasis>ipsec-tools</emphasis>来搭建<emphasis>ipsec</emphasis>连接。</para>
+    <title>验证阶段</title>
+    <para>
+      好了，一切准备就绪，接下来我们要做3组测试，<emphasis>虚拟服务器</emphasis>、<emphasis>DMZ</emphasis>、<emphasis>一对一地址映射</emphasis>。
+    </para>
     <section>
-      <title>准备工作</title>
-      <para>其实一路走过来，大家也总结出一个规律--“先配置内核，再配置用户空间程序”，将协议做到内核中，可以提高效率，充分发挥<emphasis>linux内核</emphasis>作用，所以让我先看看如何启用内核中的<emphasis>ipsec</emphasis>功能吧。</para>
-      <screen>
-[*] Networking support  --->
-    Networking options  --->
-        &lt;*> PF_KEY sockets
-        &lt;M>   IP: ESP transformation
-        &lt;M>   IP: IPsec transport mode
-        &lt;M>   IP: IPsec tunnel mode 
--*- Cryptographic API  --->
-    {*}   HMAC support                             
-    -*-   CRC32c CRC algorithm                     
-    {*}   MD5 digest algorithm                     
-    {*}   SHA1 digest algorithm                    
-    &lt;*&gt;   Tiger digest algorithms                  
-    -*-   AES cipher algorithms                    
-    {M}   AES cipher algorithms (i586)             
-    &lt;M&gt;   AES cipher algorithms (AES-NI)           
-    &lt;M&gt;   Blowfish cipher algorithm                
-    {M}   DES and Triple DES EDE cipher algorithms 
-      </screen>
-      <para>配置内核我们做了两件事，一是添加协议支持，二是添加加密算法。接下来让我们选取<emphasis>ipsec-tools</emphasis>吧。</para>
-      <screen>
-Package Selection for the target  --->
-    Networking applications  --->
-        [*] ipsec-tools                         
-        [*]   Enable racoonctl(8)               
-        [*]   Enable NAT-Traversal              
-        [*]   Enable IKE fragmentation          
-        [*]   Enable DPD (Dead Peer Detection)  
-        [*]   Enable statistics logging function
-        [*]   Enable readline input support     
-      </screen>
-    </section>
-    <section>
-        <title>配置阶段</title>
-        <para>OK，又到了配置阶段了，闲言少叙，上配置：</para>
+      <title>虚拟服务器</title>
+      <para>
+        <emphasis>虚拟服务器</emphasis>就是通过外网访问局域网内部的服务器。外网设备访问局域网设备，需要做端口映射，这里我们通过<emphasis>wanPC</emphasis>来访问<emphasis>serverPC</emphasis>的<emphasis>HTTP</emphasis>端口。
+      </para>
+      <para>
+        首先开启<emphasis>serverPC</emphasis>，这里为了允许外部地址访问<emphasis>serverPC</emphasis>，我们需要关掉<emphasis>serverPC</emphasis>的防火墙，
         <screen>
-<prompt># </prompt><userinput>cat /etc/racoon.conf</userinput>
-
-path pre_shared_key "/etc/racoon/psk.txt";
-
-remote 10.0.2.16 {
-        exchange_mode main,aggressive;
-        proposal {
-                encryption_algorithm 3des;
-                hash_algorithm sha1;
-                authentication_method pre_shared_key;
-                dh_group 2;
-        }
-}
-
-sainfo address 172.20.1.0/24 any address 192.168.22.0/24 any {
-        pfs_group 2;
-        lifetime time 1 hour ;
-        encryption_algorithm 3des, blowfish 448, rijndael ;
-        authentication_algorithm hmac_sha1, hmac_md5 ;
-        compression_algorithm deflate ;
-}
-<prompt># </prompt><userinput>cat /etc/racoon/psk.txt</userinput>
-10.0.2.16 123456
-<prompt># </prompt><userinput>cat /etc/ipsec-tools.conf</userinput>
-flush;
-spdflush;
-
-spdadd 172.20.1.0/24 192.168.22.0/24 any -P out ipsec
-           esp/tunnel/172.27.1.165-172.27.1.169/require;
-
-spdadd 192.168.22.0/24 172.20.1.0/24 any -P in ipsec
-           esp/tunnel/172.27.1.169-172.27.1.165/require;
-# 
-<prompt># </prompt><userinput>cat /etc/init.d/S50racoon</userinput>
-#!/bin/sh
-#
-# Start the racoon based ipsec....
-#
-
-start() {
-        mkdir -m 0700 -p /var/racoon
-        [ -f /etc/ipsec-tools.conf ] &amp;&amp; /usr/sbin/setkey -f /etc/ipsec-tools.conf
-        start-stop-daemon -x /usr/sbin/racoon -b -m -p /var/run/racoon.pid -S -- -f /etc/racoon.conf
-}
-
-stop() {
-        start-stop-daemon -x /usr/sbin/racoon -s 2 -p /var/run/racoon.pid -K
-}
-
-case "$1" in
-        start)
-                echo "Starting racoon..."
-                start
-                ;;
-        stop)
-                echo "Stoping racoon..."
-                stop
-                ;;
-        restart|reload)
-                "$0" stop
-                "$0" start
-                ;;
-        *)
-                echo "Usage: $0 {start|stop|restart}"
-                exit 1
-esac
-
-exit $?
+<prompt>root@OpenWrt:/# </prompt><userinput>/etc/init.d/firewall stop</userinput>
         </screen>
+        这样我们就可以随意访问<emphasis>serverPC</emphasis>的80端口了，此外，我们还要允许局域网内lan设备的互访，所以在<emphasis>router</emphasis>上添加一条规则：
+      </para>
+      <screen>
+<prompt># </prompt><userinput>iptables -A FORWARD -i br0 -o br0 -j ACCEPT</userinput>
+      </screen>
+      <para>
+        我们尝试访问<emphasis>serverPC</emphasis>的80端口：
+      </para>
+      <screen>
+<prompt>root@OpenWrt:/# </prompt><userinput>nc 192.168.1.214 80</userinput>
+
+HTTP/1.1 400 Bad Request
+Connection: close
+Content-Type: text/plain
+Transfer-Encoding: chunked
+
+B
+Bad Request
+0
+      </screen>
+      <para>
+        OK，接下来通过<emphasis>wanPC</emphasis>访问一下：
+      </para>
+      <screen>
+<prompt>root@OpenWrt:/# </prompt><userinput>nc 192.168.1.214 80</userinput>
+nc: can't connect to remote host (192.168.1.214): Connection refused
+      </screen>
+      <para>
+        结果显而易见，<emphasis>wanPC</emphasis>访问不到<emphasis>serverPC</emphasis>的地址的，只能访问到<emphasis>router</emphasis>，我们只有做端口映射才行！
+      </para>
+      <para>
+        登录<emphasis>router</emphasis>，添加端口映射：
+      </para>
+      <screen>
+<prompt># </prompt><userinput>iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 8080 -j DNAT --to-destination 192.168.1.214:80</userinput>
+<prompt># </prompt><userinput>iptables -t filter -A FORWARD -i eth0 -d 192.168.1.214 -p tcp --dport 80 -j ACCEPT</userinput>
+      </screen>
+      <imageobject>
+        <imagedata align="right" width="6in" format="PNG"
+          fileref="../images/nfk-traversal.png"/>
+      </imageobject>
     </section>
+    <para>
+      首先在<emphasis>PREROUTING</emphasis>添加地址映射，由于我们的<emphasis>FORWARD</emphasis>的默认策略是<emphasis>DROP</emphasis>的，所以我们需要放行到目的地址<emphasis>192.168.1.214</emphasis>端口<emphasis>80</emphasis>的数据包。
+    </para>
+    <para>
+      接下来通过<emphasis>wanPC</emphasis>再访问一下：
+    </para>
+    <screen>
+<prompt>root@OpenWrt:/# </prompt><userinput>nc 10.0.2.15 8080</userinput>
+
+HTTP/1.1 400 Bad Request
+Connection: close
+Content-Type: text/plain
+Transfer-Encoding: chunked
+
+B
+Bad Request
+0
+    </screen>
+    <para>
+      此时注意我们要访问的地址是<emphasis>router</emphasis>的地址，端口为映射的端口号。
+    </para>
   </section>
 </chapter>
