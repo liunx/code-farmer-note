@@ -216,27 +216,50 @@ nc: can't connect to remote host (192.168.1.214): Connection refused
         <imagedata align="right" width="6in" format="PNG"
           fileref="../images/nfk-traversal.png"/>
       </imageobject>
+      <para>
+        首先在<emphasis>PREROUTING</emphasis>添加地址映射，由于我们的<emphasis>FORWARD</emphasis>的默认策略是<emphasis>DROP</emphasis>的，所以我们需要放行到目的地址<emphasis>192.168.1.214</emphasis>端口<emphasis>80</emphasis>的数据包。
+      </para>
+      <para>
+        接下来通过<emphasis>wanPC</emphasis>再访问一下：
+      </para>
+      <screen>
+        <prompt>root@OpenWrt:/# </prompt><userinput>nc 10.0.2.15 8080</userinput>
+
+        HTTP/1.1 400 Bad Request
+        Connection: close
+        Content-Type: text/plain
+        Transfer-Encoding: chunked
+
+        B
+        Bad Request
+        0
+      </screen>
+      <para>
+        此时注意我们要访问的地址是<emphasis>router</emphasis>的地址，端口为映射的端口号。
+      </para>
     </section>
-    <para>
-      首先在<emphasis>PREROUTING</emphasis>添加地址映射，由于我们的<emphasis>FORWARD</emphasis>的默认策略是<emphasis>DROP</emphasis>的，所以我们需要放行到目的地址<emphasis>192.168.1.214</emphasis>端口<emphasis>80</emphasis>的数据包。
-    </para>
-    <para>
-      接下来通过<emphasis>wanPC</emphasis>再访问一下：
-    </para>
-    <screen>
-<prompt>root@OpenWrt:/# </prompt><userinput>nc 10.0.2.15 8080</userinput>
-
-HTTP/1.1 400 Bad Request
-Connection: close
-Content-Type: text/plain
-Transfer-Encoding: chunked
-
-B
-Bad Request
-0
-    </screen>
-    <para>
-      此时注意我们要访问的地址是<emphasis>router</emphasis>的地址，端口为映射的端口号。
-    </para>
+    <section>
+      <title>DMZ配置</title>
+      <para><emphasis>DMZ</emphasis>的意思为<emphasis>隔离区</emphasis>，简单的说，就是强制外部网络访问指定的内网PC，这样既创建了一个共享区域，又可以防止网络访问内部其他的PC，增强了安全性。</para>
+      <para>
+        创建方法很简单，只要在原来的基础上稍加修改，即可。
+      </para>
+      <screen>
+<prompt># </prompt><userinput>iptables -t nat -A PREROUTING -i eth0 -j DNAT --to-destination 192.168.1.214</userinput>
+<prompt># </prompt><userinput>iptables -t filter -A FORWARD -i eth0 -d 192.168.1.214 -j ACCEPT</userinput>
+      </screen>
+      <para>
+        我们将外部网络到网关的所有访问，重定向到<emphasis>192.168.1.214</emphasis>的LAN侧主机中了，这样外部网络无论创建何种连接，都会重定向到指定PC上的，防止恶意的访问。
+      </para>
+    </section>
+    <section>
+      <title>一对一地址映射</title>
+      <para>
+        <emphasis>一对一地址映射</emphasis>强制LAN侧特定IP访问WAN侧的特定IP。
+      </para>
+      <screen>
+        <prompt># </prompt><userinput>iptables -t nat -A POSTROUTING -s 192.168.1.214/32 -j SNAT --to-source 10.0.2.15</userinput>
+      </screen>
+    </section>
   </section>
 </chapter>
