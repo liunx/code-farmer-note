@@ -1,95 +1,224 @@
 <chapter xml:id="chapter8" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="zh-CN"
   xmlns:xlink='http://www.w3.org/1999/xlink'>
-  <title>Quality of Service (QOS)</title>
-  <para><emphasis>QOS</emphasis>翻译过来就叫做服务质量，显然，在资源一定的情况下，如何提高服务质量，就是我们本章需要解决的问题。不知大家是否有在宿舍共享上网的痛苦经历，如果有些<quote>不法分子</quote>开启迅雷等下载工具的时候，是否感觉网络异常的慢呢？呵呵，想来确实可气，要是能够对某些不法分子进行惩戒就好了，那么<emphasis>QOS</emphasis>就派上用场了！</para>
+  <title>路由配置</title>
+  <para>
+    路由器的核心功能就是通过转发数据包来实现网络互联。
+  </para>
   <section>
     <title>准备工作</title>
-    <para><emphasis>QOS</emphasis>工作的核心还是<emphasis>linux</emphasis>内核，也就是说网络资源分配的执行终端就是内核，而我们只是通过用户空间程序来给内核制定工作内容和创建规则。</para>
-    <para>首先让我们打来内核的<emphasis>QOS</emphasis>功能。</para>
+    <para>
+      首先打开内核的<emphasis>advanced router</emphasis>的功能。
+    </para>
     <screen>
 [*] Networking support  --->
   Networking options  --->
-    [*] QoS and/or fair queueing  --->
-      &lt;M&gt;   Token Bucket Filter (TBF)
-      &lt;M&gt;   Class Based Queueing (CBQ)
-      &lt;M&gt;   Hierarchical Token Bucket (HTB)
+    [*]   IP: advanced router
+    [*]     IP: policy routing
     </screen>
-    <para>接下来让我们选择用户空间程序：</para>
+    <para>
+      然后安装<emphasis>iproute2</emphasis>。
+    </para>
     <screen>
 Package Selection for the target  --->
   Networking applications  --->
-    [*] iperf
     [*] iproute2
     </screen>
-    <para><emphasis>tc</emphasis>用来操作内核<emphasis>QOS</emphasis>模块的，而<emphasis>iperf</emphasis>则是用来测试网络性能的工具。</para>
+    <para>
+      配置完成，别忘了重新编译一下。
+    </para>
+    <para>
+      最后我们还要创建两个<emphasis>虚拟网络</emphasis>接口用于测试。
+    </para>
+    <menuchoice>
+      <guimenu>虚拟系统管理器</guimenu>
+      <guimenuitem>编辑</guimenuitem>
+      <guimenuitem>Connection Details</guimenuitem>
+      <guimenuitem>虚拟网络</guimenuitem>
+    </menuchoice>
+    <para>
+      点击添加按钮，网络名称输入<emphasis>virbr1</emphasis>，其他的使用默认设置即可，最后<emphasis>连接到物理网络</emphasis>页，选择<emphasis>转发到物理网络</emphasis>即可，最后点击完成。我们接着再创建一个名为<emphasis>virbr2</emphasis>的虚拟网络，注意网络地址范围要改动一下。
+    </para>
+    <para>
+      最终我们需要看到这样的效果。
+    </para>
+    <screen>
+virbr1    Link encap:以太网  硬件地址 4e:9d:01:ad:ca:76
+          inet 地址:192.168.100.1  广播:192.168.100.255  掩码:255.255.255.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  跃点数:1
+          接收数据包:446 错误:0 丢弃:0 过载:0 帧数:0
+          发送数据包:295 错误:0 丢弃:0 过载:0 载波:0
+          碰撞:0 发送队列长度:0
+          接收字节:35739 (35.7 KB)  发送字节:27674 (27.6 KB)
+
+virbr2    Link encap:以太网  硬件地址 52:54:00:4f:a0:f3
+          inet 地址:192.168.101.1  广播:192.168.101.255  掩码:255.255.255.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  跃点数:1
+          接收数据包:63 错误:0 丢弃:0 过载:0 帧数:0
+          发送数据包:52 错误:0 丢弃:0 过载:0 载波:0
+          碰撞:0 发送队列长度:0
+          接收字节:5285 (5.2 KB)  发送字节:5176 (5.1 KB)
+    </screen>
   </section>
   <section>
-    <title>实验阶段</title>
-    <para>好了，现在进入实验阶段，下面看看网络拓扑图：</para>
-    <imageobject>
-      <imagedata align="right" width="6in" format="PNG" fileref="../images/qos.png"/>
-    </imageobject>
-    <para>嗯？这次<emphasis>openwrt</emphasis>倒是<quote>反客为主</quote>，这是为什么呢？因为<emphasis>linux</emphasis>的<emphasis>QOS</emphasis>只能限制下行速度，也就是说只能限制发出的速度，而不能限制输入的速度，简单的比方就是<quote>病从口入，祸从口出</quote>！</para>
+    <title>静态路由</title>
+    <para>
+      <emphasis>静态路由</emphasis>用于手工设定数据包的转发路线，为特定的目的地址或地址段指定路由路线。
+    </para>
     <section>
-      <title>TBF简单限速</title>
-      <para>如果我们只是简单得限制上行速度，那么<emphasis>TBF-(Token Bucket Filter</emphasis>就是很好的选择，因为他使用简单，并且很精确。那么接下来，就让我们看看<emphasis>TBF</emphasis>是如何产生效果的吧。</para>
-      <para>首先在<emphasis>openwrt</emphasis>服务端开启<emphasis>iperf</emphasis>服务：</para>
+      <title>目标描述</title>
+      <imageobject>
+        <imagedata align="right" width="6in" format="PNG"
+          fileref="../images/static-route.png"/>
+      </imageobject>
+      <para>
+        红色部分表示我们的路由器，这里我们创建连个WAN上联接口到<emphasis>virbr1</emphasis>，<emphasis>virbr2</emphasis>，<emphasis>virbr1</emphasis>、<emphasis>virbr2</emphasis>模拟两个路由器，可以通过他们访问外部网络。我们最终的目标是，通过改变<emphasis>router</emphasis>的路由规则，控制<emphasis>lanPC</emphasis>访问外部网络的数据链路。
+      </para>
+    </section>
+    <section>
+      <title>创建路由器</title>
       <screen>
-<prompt># </prompt><userinput>iperf -s</userinput>
-------------------------------------------------------------
-Server listening on TCP port 5001
-TCP window size: 85.3 KByte (default)
-------------------------------------------------------------
+<prompt>liunx@liunx-g41mt-s2pt:~/work/docbook/work/code-farmer-note/examples/chapter8$ </prompt><userinput>cat router.sh</userinput>
+#!/bin/bash -
+set -o nounset
+# Treat unset variables as an error
+/usr/local/bin/qemu-system-i386 \
+    -m 64M \
+    -kernel images/bzImage \
+    -hda images/rootfs.ext2 \
+    -append "root=/dev/sda console=ttyS0" \
+    -enable-kvm \
+    -daemonize \
+    -vnc :51 \
+    -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:01 \
+    -net tap,vlan=0,ifname=router1,script=router1-ifup,downscript=router1-ifdown \
+    -net nic,vlan=1,model=e1000,macaddr=52:54:00:12:34:02 \
+    -net tap,vlan=1,ifname=router2,script=router2-ifup,downscript=router2-ifdown \
+    -net nic,vlan=2,model=e1000,macaddr=52:54:00:12:34:11 \
+    -net vde,vlan=2,sock=/tmp/lan1.ctl[] \
+    -net nic,vlan=3,model=e1000,macaddr=52:54:00:12:34:12 \
+    -net vde,vlan=3,sock=/tmp/lan2.ctl[] \
+    -net nic,vlan=4,model=e1000,macaddr=52:54:00:12:34:13 \
+    -net vde,vlan=4,sock=/tmp/lan3.ctl[] \
+    -net nic,vlan=5,model=e1000,macaddr=52:54:00:12:34:14 \
+    -net vde,vlan=5,sock=/tmp/lan4.ctl[]
+
+<prompt>liunx@liunx-g41mt-s2pt:~/work/docbook/work/code-farmer-note/examples/chapter8$ </prompt><userinput>cat router1-ifup</userinput>
+#!/bin/bash -
+
+bridge=virbr1
+ifconfig $1 0.0.0.0 promisc up
+brctl addif $bridge $1
+
+<prompt>liunx@liunx-g41mt-s2pt:~/work/docbook/work/code-farmer-note/examples/chapter8$ </prompt><userinput>cat router1-ifdown</userinput>
+#!/bin/bash -
+
+bridge=virbr1
+brctl delif $bridge $1 || true
+ifconfig $1 down
+
+<prompt>liunx@liunx-g41mt-s2pt:~/work/docbook/work/code-farmer-note/examples/chapter8$ </prompt><userinput>cat router2-ifup</userinput>
+#!/bin/bash -
+
+bridge=virbr1
+ifconfig $1 0.0.0.0 promisc up
+brctl addif $bridge $1
+
+<prompt>liunx@liunx-g41mt-s2pt:~/work/docbook/work/code-farmer-note/examples/chapter8$ </prompt><userinput>cat router2-ifdown</userinput>
+#!/bin/bash -
+
+bridge=virbr1
+brctl delif $bridge $1 || true
+ifconfig $1 down
+
       </screen>
-      <para>接下来，我们下不急于设置<emphasis>QOS</emphasis>规则，我们先<quote>裸跑</quote>一下，看看没有限速的情况下，我们的网络情况如何？</para>
+      <para>
+        注意，这里我们创建了两个<emphasis>tap</emphasis>网络作为上行接口。
+      </para>
+    </section>
+    <section>
+      <title>创建lanPC</title>
       <screen>
-<prompt># </prompt><userinput>iperf -c 10.0.2.16</userinput>
-------------------------------------------------------------
-Client connecting to 10.0.2.16, TCP port 5001
-TCP window size: 19.6 KByte (default)
-------------------------------------------------------------
-[  3] local 10.0.2.15 port 40529 connected with 10.0.2.16 port 5001
-[ ID] Interval       Transfer     Bandwidth
-[  3]  0.0-10.2 sec  3.88 MBytes  3.19 Mbits/sec
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-<prompt>root@OpenWrt:/# </prompt><userinput>iperf -s</userinput>
-
-------------------------------------------------------------
-Server listening on TCP port 5001
-TCP window size: 85.3 KByte (default)
-------------------------------------------------------------
-[  4] local 10.0.2.16 port 5001 connected with 10.0.2.15 port 40529
-[ ID] Interval       Transfer     Bandwidth
-[  4]  0.0-10.8 sec  3.88 MBytes  3.02 Mbits/sec
-
+<prompt>liunx@liunx-g41mt-s2pt:~/work/docbook/work/code-farmer-note/examples/chapter8$ </prompt><userinput>cat lanPC.sh</userinput>
+#!/bin/bash -
+set -o nounset
+# Treat unset variables as an error
+/usr/local/bin/qemu-system-i386 \
+    -m 64M \
+    -kernel images/openwrt-x86-generic-vmlinuz \
+    -hda images/openwrt-x86-generic-rootfs-ext4.img \
+    -append "root=/dev/sda console=ttyS0" \
+    -enable-kvm \
+    -daemonize \
+    -vnc :52 \
+    -net nic,vlan=0,model=e1000,macaddr=52:54:00:12:34:31 \
+    -net vde,vlan=0,sock=/tmp/lan1.ctl
       </screen>
-      <para>哈，<emphasis>vde</emphasis>网络的速度还行，当然和物理网络相比还是有一定差距的，好，接下来让我们看看<emphasis>QOS</emphasis>后，是个什么情况吧！</para>
+      <para>
+        这里的配置和以前没有什么变化。
+      </para>
+    </section>
+    <section>
+      <title>验证阶段</title>
+      <para>
+        好了，一切准备就绪，开始验证。需要注意的是，<emphasis>router</emphasis>创建的有<emphasis>tap</emphasis>接口，需要特权，所以我们需要这样运行：
+      </para>
       <screen>
-<prompt># </prompt><userinput>tc qdisc add dev eth0 root tbf rate 60kbit latency 50ms burst 1540</userinput>
-<prompt># </prompt><userinput>iperf -c 10.0.2.16</userinput>
-------------------------------------------------------------
-Client connecting to 10.0.2.16, TCP port 5001
-TCP window size: 19.6 KByte (default)
-------------------------------------------------------------
-[  3] local 10.0.2.15 port 40530 connected with 10.0.2.16 port 5001
-[ ID] Interval       Transfer     Bandwidth
-[  3]  0.0-20.1 sec   128 KBytes  52.1 Kbits/sec
-
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-------------------------------------------------------------
-Server listening on TCP port 5001
-TCP window size: 85.3 KByte (default)
-------------------------------------------------------------
-[  4] local 10.0.2.16 port 5001 connected with 10.0.2.15 port 40529
-[ ID] Interval       Transfer     Bandwidth
-[  4]  0.0-10.8 sec  3.88 MBytes  3.02 Mbits/sec
-[  4] local 10.0.2.16 port 5001 connected with 10.0.2.15 port 40530
-[  4]  0.0-22.6 sec   128 KBytes  46.3 Kbits/sec
+<prompt>liunx@liunx-g41mt-s2pt:~/work/docbook/work/code-farmer-note/examples/chapter8$ </prompt><userinput>sudo ./router.sh</userinput>
+<prompt>liunx@liunx-g41mt-s2pt:~/work/docbook/work/code-farmer-note/examples/chapter8$ </prompt><userinput>sudo ./lanPC.sh</userinput>
       </screen>
-      <para>嗯，效果很明显，很不错！</para>
+      <para>
+        <emphasis>router</emphasis>以根用户的权限运行，所以他创建的接口也是根用户的权限，所以<emphasis>lanPC</emphasis>也只有以根用户的权限才能运行！
+      </para>
+      <para>
+        首先我们在主机上创建一个端口，然后用<emphasis>lanPC</emphasis>连接这个端口：
+      </para>
+      <screen>
+<prompt>root@OpenWrt:/# </prompt><userinput>nc 10.129.228.66 8080</userinput>
+      </screen>
+      <para>
+        这里访问的正是我的主机的地址。
+      </para>
+      <screen>
+<prompt>liunx@liunx-G41MT-S2PT:~$ </prompt><userinput>nc -vv -lk 8080</userinput>
+Listening on [0.0.0.0] (family 0, port 8080)
+Connection from [192.168.101.168] port 8080 [tcp/http-alt] accepted (family 2, sport 38033)
+hello
+Connection closed, listening again.
+      </screen>
+      <para>
+        <emphasis>nc</emphasis>会显示源地址，这正式我们需要的功能。
+      </para>
+      <para>
+        接下来让我们看看<emphasis>router</emphasis>的路由情况：
+      </para>
+      <screen>
+<prompt># </prompt><userinput>route -n</userinput>
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         192.168.101.1   0.0.0.0         UG    0      0        0 eth1
+0.0.0.0         192.168.100.1   0.0.0.0         UG    0      0        0 eth0
+192.168.1.0     0.0.0.0         255.255.255.0   U     0      0        0 br0
+192.168.100.0   0.0.0.0         255.255.255.0   U     0      0        0 eth0
+192.168.101.0   0.0.0.0         255.255.255.0   U     0      0        0 eth1
+      </screen>
+      <para>
+        这里有两个默认网关，由于这两个网关都可以到达主机，<emphasis>router</emphasis>默认选择第一条网关出去了，其实默认路由就是特殊的静态路由而已。那么我们开始强制<emphasis>lanPC</emphasis>通过<emphasis>192.168.100.1</emphasis>网关出去，这样就实现了静态路由功能。
+      </para>
+      <screen>
+<prompt># </prompt><userinput>route add -host 10.129.228.66 gw 192.168.100.1</userinput>
+      </screen>
+      <para>
+        这个时候我们再试一下，看看源地址是否改变了。
+      </para>
+<prompt>liunx@liunx-G41MT-S2PT:~$ </prompt><userinput>nc -vv -lk 8080</userinput>
+Listening on [0.0.0.0] (family 0, port 8080)
+Connection from [192.168.100.167] port 8080 [tcp/http-alt] accepted (family 2, sport 38033)
+hello
+Connection closed, listening again.
+      </screen>
+      <para>
+        看，成功了。
+      </para>
     </section>
   </section>
 </chapter>
