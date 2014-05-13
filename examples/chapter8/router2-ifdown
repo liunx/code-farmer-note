@@ -1,0 +1,5 @@
+#!/bin/bash -
+
+bridge=virbr2
+brctl delif $bridge $1 || true
+ifconfig $1 down

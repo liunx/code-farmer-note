@@ -1,0 +1,5 @@
+#!/bin/bash -
+
+bridge=virbr1
+sudo ifconfig $1 0.0.0.0 promisc up
+sudo brctl addif $bridge $1
